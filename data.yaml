@@ -1,0 +1,6 @@
+path: D:\Ahsan\Programming\Computer Vision\Projects\ANPR - Pakistani Dataset\data
+train: images/train
+val: images/train
+
+names:
+  0: plate
