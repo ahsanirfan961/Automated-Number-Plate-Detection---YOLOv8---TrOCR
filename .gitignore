@@ -1,3 +1,5 @@
 # Ignore images and labels from datasets
 datasets/*/images
 datasets/*/labels
+__pycache__
+yolov8n.pt

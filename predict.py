@@ -1,15 +1,17 @@
 import cv2, os
 from ultralytics import YOLO
 
-test_dir_path = 'data/images/test'
-model_path = 'runs/detect/train3/weights/best.pt'
+test_dir_path = 'datasets/dataset - AB-Rehman/images/test'
+model_path = 'runs/detect/train22/weights/best.pt'
 
 model = YOLO(model_path)
 
 images = []
-for file in os.listdir('data/images/test'):
+for i, file in enumerate(os.listdir(test_dir_path)):
     img_path = test_dir_path + '/' + file
     images.append(cv2.imread(img_path))
+    if i == 5:
+        break
 
 for i, img in enumerate(images):
     prediction = model(img)[0]

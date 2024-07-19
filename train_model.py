@@ -1,5 +1,6 @@
 from ultralytics import YOLO
 
-model = YOLO('yolov8n.yaml')
+model = YOLO('yolov8n.pt')
 
-result = model.train(data='./datasets/dataset - AB-Rehman/data.yaml', epochs=1)
+if __name__ == "__main__":
+    result = model.train(data='datasets\dataset 1\data.yaml', epochs=40)
