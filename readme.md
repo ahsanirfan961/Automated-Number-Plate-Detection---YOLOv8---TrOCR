@@ -20,11 +20,11 @@ The confusion matrix for training is as under:
 ![matrix](https://github.com/ahsanirfan961/Automated-Number-Plate-Detection---YOLOv8---EasyOCR/blob/main/runs/detect/train%20-%20dataset%201%20---%2040%20epoch/confusion_matrix_normalized.png)
 
 The results of the training are as under:
-![results](https://github.com/ahsanirfan961/Automated-Number-Plate-Detection---YOLOv8---EasyOCR/edit/main/readme.txt)
+![results](https://github.com/ahsanirfan961/Automated-Number-Plate-Detection---YOLOv8---EasyOCR/blob/main/runs/detect/train%20-%20dataset%201%20---%2040%20epoch/results.png)
 
 ### Testing on Test Set
 When the model is tested on a new test set, it gives the following results:
-![test set results]()
+![test set results](https://github.com/ahsanirfan961/Automated-Number-Plate-Detection---YOLOv8---EasyOCR/blob/main/runs/detect/test%20-%20dataset%201%20---%2040%20epoch/predict%201.png)
 
 
 ### Note
