@@ -1,8 +1,8 @@
 import cv2, os
 from ultralytics import YOLO
 
-test_dir_path = 'datasets/dataset - AB-Rehman/images/test'
-model_path = 'runs/detect/train22/weights/best.pt'
+test_dir_path = 'datasets/dataset 1/images/test'
+model_path = 'runs/detect/train - dataset 1 --- 40 epoch/weights/best.pt'
 
 model = YOLO(model_path)
 
@@ -10,7 +10,7 @@ images = []
 for i, file in enumerate(os.listdir(test_dir_path)):
     img_path = test_dir_path + '/' + file
     images.append(cv2.imread(img_path))
-    if i == 5:
+    if i == 10:
         break
 
 for i, img in enumerate(images):
@@ -22,5 +22,6 @@ for i, img in enumerate(images):
         cv2.putText(img, prediction.names[int(class_id)].upper(), (int(x1), int(y1 - 10)),cv2.FONT_HERSHEY_SIMPLEX, 1.3, (0, 255, 0), 3, cv2.LINE_AA)
     cv2.imshow(f"Image {i}", img)
 
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+key = cv2.waitKey(0)
+if key == 27:
+    cv2.destroyAllWindows()
