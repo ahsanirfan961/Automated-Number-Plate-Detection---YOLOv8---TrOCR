@@ -12,7 +12,7 @@ for i, file in enumerate(os.listdir(test_dir_path)):
     images.append(cv2.imread(img_path))
     if i == 10:
         break
-
+ 
 for i, img in enumerate(images):
     prediction = model(img)[0]
     for result in prediction.boxes.data.tolist():
