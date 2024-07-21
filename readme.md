@@ -1,10 +1,17 @@
 # Automated Number Plate Detection System
 This is a software to detect number plates of cars uing Computer Vision and AI. It can dtect and read number plates from an image, a video or from live camera.
 
-### Tools Used
-1. Python
-2. Yolov8
+### Tools Used and Dependency versions:
+1. Python V 3.11 (Important)
+2. Yolov8n
 3. EasyOCR
+4. OpenCV (Contrib version 4.8.0.74)
+5. Numpy (Version 1.26.4)
+
+## All the versions mentioned above should me followed. A specific bug will arise when using EasyOCR. To solve the following bug:
+ 1. open directory containing EasyOCR package in Python Directory and open file named 'easyocr.py'.
+ 2. in top import line look for the line contaning 'from bidi.algorithms import .......' and replace the word 'bidi.algorithm' with just bidi and save the file.
+
 
 ### Dataset
 The dataset is taken from kaggle. It contains almost 30k images from a diverse range of vehicles. It is annotated in Yolo v5 format.\
