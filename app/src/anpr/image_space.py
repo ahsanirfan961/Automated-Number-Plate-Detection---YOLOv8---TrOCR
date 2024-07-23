@@ -63,7 +63,7 @@ class ImageSpace(Workspace):
         if self.imageLoaded:
             self.detectionTable.clearContents()
             self.detectionTable.setRowCount(0)
-            self.scanThread = self.ScanImage(self)
+            self.scanThread = ScanImage(self)
             self.scanThread.statusBarSignal.connect(self.showStatusBarMessage)
             self.scanThread.updateUiSignal.connect(self.updateUi)
             self.scanThread.loadingSignal.connect(self.loading.update)
@@ -72,45 +72,45 @@ class ImageSpace(Workspace):
         else:
             self.showStatusBarMessage('No image loaded!')
 
-    class ScanImage(QThread):
-        statusBarSignal = pyqtSignal(str)
-        loadingSignal = pyqtSignal(int)
-        updateUiSignal = pyqtSignal()
+class ScanImage(QThread):
+    statusBarSignal = pyqtSignal(str)
+    loadingSignal = pyqtSignal(int)
+    updateUiSignal = pyqtSignal()
 
-        def __init__(self, imageSpace):
-            super().__init__()
-            self.imageSpace = imageSpace
+    def __init__(self, imageSpace):
+        super().__init__()
+        self.imageSpace = imageSpace
 
-        def run(self):
-            self.loadingSignal.emit(5)
-            model = YOLO(self.imageSpace.modelPath)
-            self.loadingSignal.emit(40)
-            prediction = model(self.imageSpace.canvasImage)[0]
-            self.loadingSignal.emit(70)
+    def run(self):
+        self.loadingSignal.emit(5)
+        model = YOLO(self.imageSpace.modelPath)
+        self.loadingSignal.emit(40)
+        prediction = model(self.imageSpace.canvasImage)[0]
+        self.loadingSignal.emit(70)
 
-            positions = []
-            accuracy = []
-            for result in prediction.boxes.data.tolist():
-                x1, y1, x2, y2, score, class_id = result
-                self.imageSpace.markPlate(prediction.names[int(class_id)].upper(), x1, y1, x2, y2)
-                positions.append({
-                    'x1': int(x1),
-                    'y1': int(y1),
-                    'x2': int(x2),
-                    'y2': int(y2),
-                })
-                accuracy.append(score)
-            
-            self.loadingSignal.emit(85)
+        positions = []
+        accuracy = []
+        for result in prediction.boxes.data.tolist():
+            x1, y1, x2, y2, score, class_id = result
+            self.imageSpace.markPlate(prediction.names[int(class_id)].upper(), x1, y1, x2, y2)
+            positions.append({
+                'x1': int(x1),
+                'y1': int(y1),
+                'x2': int(x2),
+                'y2': int(y2),
+            })
+            accuracy.append(score)
+        
+        self.loadingSignal.emit(85)
 
-            self.imageSpace.insertRowInTable(self.imageSpace.detectionTable, ['# of plates', f"{len(prediction.boxes.data.tolist())}"])
-            self.imageSpace.insertRowInTable(self.imageSpace.detectionTable, ['Positions', '------------'])
-            for i, position in enumerate(positions):
-                self.imageSpace.insertRowInTable(self.imageSpace.detectionTable, [f"Plate - {i+1}", f"{position['x1']}x{position['y1']}, {position['x2']}x{position['y2']}"])
-            self.imageSpace.insertRowInTable(self.imageSpace.detectionTable, ['Accuracy', '------------'])
-            for i, acc in enumerate(accuracy):
-                self.imageSpace.insertRowInTable(self.imageSpace.detectionTable, [f"Plate - {i+1}", f"{round(acc*100, 2)}%"])
-            
-            self.loadingSignal.emit(100)
-            self.updateUiSignal.emit()
-            self.statusBarSignal.emit('Successfuly scanned for number plates!')
+        self.imageSpace.insertRowInTable(self.imageSpace.detectionTable, ['# of plates', f"{len(prediction.boxes.data.tolist())}"])
+        self.imageSpace.insertRowInTable(self.imageSpace.detectionTable, ['Positions', '------------'])
+        for i, position in enumerate(positions):
+            self.imageSpace.insertRowInTable(self.imageSpace.detectionTable, [f"Plate - {i+1}", f"{position['x1']}x{position['y1']}, {position['x2']}x{position['y2']}"])
+        self.imageSpace.insertRowInTable(self.imageSpace.detectionTable, ['Accuracy', '------------'])
+        for i, acc in enumerate(accuracy):
+            self.imageSpace.insertRowInTable(self.imageSpace.detectionTable, [f"Plate - {i+1}", f"{round(acc*100, 2)}%"])
+        
+        self.loadingSignal.emit(100)
+        self.updateUiSignal.emit()
+        self.statusBarSignal.emit('Successfuly scanned for number plates!')
