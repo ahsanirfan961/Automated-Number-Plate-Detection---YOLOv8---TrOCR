@@ -18,6 +18,9 @@ class Workspace(QMainWindow):
     imageLoaded = False
     DISAPPEAR = True
     DISAPPEAR_FALSE = False
+    newFileTypes = ''
+    saveFileTypes = ''
+    filename = ''
 
     def __init__(self):
         super(Workspace, self).__init__()
@@ -82,13 +85,13 @@ class Workspace(QMainWindow):
         self.resetTables()
         self.showStatusBarMessage('Canvas Reset!')
     
-    def selectFile(self, types='PNG JPEG (*.jpg *.png)'):
+    def selectFile(self, types):
         fileDialog = QFileDialog(self)
         options = QFileDialog.options(fileDialog)
         filePath, _ = QFileDialog.getOpenFileName(self, 'Select a file', 'app/assets/images', types, options=options)
         return filePath
    
-    def getSavePath(self, types='PNG (*.png);;JPEG (*.jpg);;All Files (*)'):
+    def getSavePath(self, types):
         fileDialog = QFileDialog(self)
         options = QFileDialog.options(fileDialog)
         self.savePath, _ = QFileDialog.getSaveFileName(self, 'Save File As', 'app/assets/images', types, options=options)
@@ -141,6 +144,7 @@ class Workspace(QMainWindow):
         self.canvasHeight = self.canvas.height()
     
     def updateUi(self):
+        self.resizeFitToCanvas()
         height, width, channel = self.canvasImage.shape
         qimage = QImage(self.canvasImage.data, width, height, width*channel, QImage.Format.Format_RGB888)
         pixmap = QPixmap.fromImage(qimage)
@@ -148,29 +152,26 @@ class Workspace(QMainWindow):
 
     def save(self):
         if not self.savePath:
-            self.getSavePath()
+            self.getSavePath(self.saveFileTypes)
         if self.savePath:
             self.saveFile()
-            self.showStatusBarMessage(f"Successfully Saved {os.path.basename(self.savePath)} at {os.path.dirname(self.savePath)}!")
     
     def saveAs(self):
-        self.getSavePath()
+        self.getSavePath(self.saveFileTypes)
         if self.savePath:
             self.saveFile()
-            self.showStatusBarMessage(f"Successfully Saved {os.path.basename(self.savePath)} at {os.path.dirname(self.savePath)}!")
 
     def new(self):
-        filePath = self.selectFile()
+        filePath = self.selectFile(self.newFileTypes)
         if filePath:
             self.resetTables()
             self.filename = os.path.basename(filePath)
-            self.loadFileFromPath(filePath)
-            self.resizeFitToCanvas()
-            self.canvasImage = cv2.cvtColor(self.canvasImage, cv2.COLOR_BGR2RGB)
-            self.savePath = None
-            self.imageLoaded = True
-            self.updateUi()
-            self.showStatusBarMessage(f"Successfully Loaded {self.filename}!")
+            if self.loadFileFromPath(filePath):
+                self.savePath = None
+                self.imageLoaded = True
+                self.canvasImage = cv2.cvtColor(self.canvasImage, cv2.COLOR_BGR2RGB)
+                self.updateUi()
+                self.showStatusBarMessage(f"Successfully Loaded {self.filename}!")
         else:
             self.showStatusBarMessage(f"Cancelled!")
     

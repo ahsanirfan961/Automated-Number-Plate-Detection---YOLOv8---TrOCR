@@ -3,27 +3,31 @@ from PyQt6.QtGui import QPixmap
 from anpr import data
 from ultralytics import YOLO
 from PyQt6.QtCore import QObject, QThread, pyqtSignal
-import cv2
+import cv2, os
 
 class ImageSpace(Workspace):
-
-    filename = ''
-
+ 
     def __init__(self):
         super().__init__()
 
         self.initCanvasImage = QPixmap('app/assets/images/image icon small.png')
+        self.newFileTypes = 'PNG JPEG (*.jpg *.png)'
+        self.saveFileTypes = 'PNG (*.png);;JPEG (*.jpg)'
         self.resetCanvas()
 
     def loadFileFromPath(self, path):
             self.canvasImage = cv2.imread(path)
+            if self.canvasImage is None:
+                return False
             self.insertRowInTable(self.infoTable, ['Image name', self.filename])
             self.insertRowInTable(self.infoTable, ['Dimensions', f"{self.canvasImage.shape[1]} x {self.canvasImage.shape[0]}"])
             self.insertRowInTable(self.infoTable, ['Size', f"{self.getImageSize()} KB"])
+            return True
     
     def saveFile(self):
         saveImg = cv2.cvtColor(self.canvasImage, cv2.COLOR_RGB2BGR)
         cv2.imwrite(self.savePath, saveImg)
+        self.showStatusBarMessage(f"Successfully Saved {os.path.basename(self.savePath)} at {os.path.dirname(self.savePath)}!")
     
     def scan(self):
         if self.imageLoaded:
