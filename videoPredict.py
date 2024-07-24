@@ -5,8 +5,8 @@ import os
 cv.namedWindow("Resized_Window", cv.WINDOW_NORMAL) 
 cv.resizeWindow("Resized_Window", 600, 600)
 img=cv.imread('tests/check1.webp')
-cv.imshow('img', img)    
-cv.waitKey(0)
+
+
 
 
 # vid= cv.VideoCapture('testVideos/vid1.mp4')p
