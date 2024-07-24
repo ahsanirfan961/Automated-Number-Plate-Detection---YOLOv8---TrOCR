@@ -117,9 +117,5 @@ def thresholding(image):
 
 
 def preprocess_image(image):
-    img=Normalize_image(image)
-    img=remove_noise(img)
-    img=get_grayscale(image)
-   # img=cv2.medianBlur(img,3)
     return cv2.resize(image,(int(image.shape[1]/1),int(image.shape[0]/1)))
     
