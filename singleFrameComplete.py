@@ -6,11 +6,12 @@ from ocrReader import Reader
 
 def process_frame(img):
  img1,images,coord=plateDetection(img)
- for index,im in enumerate(images,start=0):
+ for index,im in enumerate(images):
         text=Reader(im)
         x1,x2,y1,y2=coord[index]
         position = (int(x1), int(y1))
-        text = text[0]
+        text = text
+        print(text[0])
         (text_width, text_height), baseline = cv.getTextSize(text, cv.FONT_HERSHEY_SIMPLEX, 0.5, 2)
         padding = 5
         rect_top_left = (position[0], position[1] - text_height - padding)

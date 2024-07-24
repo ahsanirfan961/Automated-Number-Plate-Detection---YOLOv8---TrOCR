@@ -2,7 +2,7 @@ import cv2 as cv
 import os
 from singleFrameComplete import process_frame
 
-def process_video(video_path, output_path):
+def process_video(video_path, output_path='ouput_video/output.avi'):
     cap = cv.VideoCapture(video_path)
     processed_frames = []
     length = int(cap.get(cv.CAP_PROP_FRAME_COUNT))

@@ -6,14 +6,11 @@ from image_preprocess import preprocess_image
 
 
 
-def Reader(imges):
+def Reader(img):
  reader = easyocr.Reader(['en'])
- txt=[]
- for img in imges:
-     t=''
-     result=reader.readtext(preprocess_image(img))
-     for res in result:
-         t+=res[1]
-     txt.append(t)
+ txt=''
+ result=reader.readtext(preprocess_image(img))
+ for res in result:
+     txt+=res[1]
  return txt    
 
