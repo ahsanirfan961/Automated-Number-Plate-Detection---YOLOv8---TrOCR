@@ -1,12 +1,29 @@
-
+from plateDetection import plateDetection
 import cv2 as cv
+from ocrReader import Reader
 import os
 
-cv.namedWindow("Resized_Window", cv.WINDOW_NORMAL) 
-cv.resizeWindow("Resized_Window", 600, 600)
-img=cv.imread('tests/check1.webp')
 
+img=cv.imread('tests/images.jpg')
+img=cv.resize(img, (600, 600))
 
+img, plates = plateDetection(img)
+
+for i, plate in enumerate(plates):
+    # histogram equalization
+    equ = cv.equalizeHist(img)
+    # Gaussian blur
+    blur = cv.GaussianBlur(equ, (5, 5), 1)
+
+    # manual thresholding
+    th2 = 60 # this threshold might vary!
+    equ[equ>=th2] = 255
+    equ[equ<th2]  = 0
+    cv.imshow(f"{i}", equ)
+    print(Reader([equ]))
+
+cv.imshow('img', img)    
+cv.waitKey(0)
 
 
 # vid= cv.VideoCapture('testVideos/vid1.mp4')p

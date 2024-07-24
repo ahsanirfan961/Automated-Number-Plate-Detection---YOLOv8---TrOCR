@@ -1,14 +1,15 @@
 import webbrowser, cv2, numpy as np
 from PyQt6.QtCore import QCoreApplication, QTimer
-from PyQt6.QtWidgets import QMainWindow, QFileDialog, QTableWidgetItem
-from PyQt6.QtGui import QPixmap, QMovie
+from PyQt6.QtWidgets import QMainWindow, QFileDialog, QTableWidgetItem, QProgressBar
+from PyQt6.QtGui import QPixmap
 from PyQt6.uic import load_ui
 from anpr import data
+from anpr.progress_bar import ProgressBar
 
 class Workspace(QMainWindow):
 
-    canvasWidth = 820
-    canvasHeight = 511
+    canvasWidth = 0
+    canvasHeight = 0
     initCanvasImage = QPixmap()
     canvasImage = None
     savePath = None
@@ -20,6 +21,8 @@ class Workspace(QMainWindow):
     def __init__(self):
         super(Workspace, self).__init__()
         load_ui.loadUi('app/assets/ui/workspace.ui', self)
+
+        QTimer.singleShot(200, self.updateCanvasSize)
 
         # File Menu
         self.actionNew.triggered.connect(self.new)
@@ -40,13 +43,16 @@ class Workspace(QMainWindow):
         self.reset_btn.clicked.connect(self.resetCanvas)
 
         # Loading
-        self.loadingGif = QMovie('app/assets/gifs/loading.gif')
-        self.loading.setMovie(self.loadingGif)
-        self.loading.hide()
+        self.loading = ProgressBar(self.statusbar)
+        self.loading.setGeometry(500, 4, 300, 12)
 
         # Clear the tables
         self.resetTables()
     
+    def resizeEvent(self, event):
+        self.updateCanvasSize()
+        self.resizeFitToCanvas()
+        self.updateUi()
 
     def exit(self):
         QCoreApplication.exit(0)
@@ -122,15 +128,15 @@ class Workspace(QMainWindow):
     
     def markPlate(self, text, x1, y1, x2, y2):
         cv2.rectangle(self.canvasImage, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
-        cv2.putText(self.canvasImage, text, (int(x1), int(y1 - 10)),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
+        cv2.rectangle(self.canvasImage, (int(x1), int(y1-20)), (int(x2), int(y1)), (0, 255, 0), -1)
+        cv2.putText(self.canvasImage, text, (int(x1+5), int(y1 - 5)),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
     
-    def toggleLoading(self, toggle):
-        if toggle:
-            self.loadingGif.start()
-            self.loading.show()
-        else:
-            self.loading.hide()
-            self.loadingGif.stop()
+    def updateCanvasSize(self):
+        self.canvasWidth = self.canvas.width()
+        self.canvasHeight = self.canvas.height()
+    
+    def updateUi(self):
+        pass
 
     def scan(self):
         pass

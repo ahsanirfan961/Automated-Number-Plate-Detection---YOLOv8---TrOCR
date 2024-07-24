@@ -5,7 +5,7 @@ from anpr import data
 home = Home()
 data.stackedWidget.setWindowTitle('Automated Number Plate Recognizer')
 data.stackedWidget.addWidget(home)
-data.stackedWidget.setFixedSize(1200, 600)
+data.stackedWidget.setMinimumSize(1200, 600)
 data.stackedWidget.show()
 
 try:
