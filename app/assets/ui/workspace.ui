@@ -360,7 +360,7 @@ background-color: rgb(85, 85, 85);
          <property name="frameShadow">
           <enum>QFrame::Raised</enum>
          </property>
-         <layout class="QHBoxLayout" name="horizontalLayout_5">
+         <layout class="QVBoxLayout" name="verticalLayout_2">
           <property name="leftMargin">
            <number>0</number>
           </property>
@@ -375,6 +375,12 @@ background-color: rgb(85, 85, 85);
           </property>
           <item>
            <widget class="QLabel" name="canvas">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>1</verstretch>
+             </sizepolicy>
+            </property>
             <property name="styleSheet">
              <string notr="true">background-color: rgb(206, 206, 206);</string>
             </property>

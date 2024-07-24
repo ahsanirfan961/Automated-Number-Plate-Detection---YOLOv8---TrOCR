@@ -1,6 +1,7 @@
-import webbrowser, cv2, numpy as np
+import webbrowser, cv2, numpy as np, os
 from PyQt6.QtCore import QCoreApplication, QTimer
-from PyQt6.QtWidgets import QMainWindow, QFileDialog, QTableWidgetItem, QProgressBar
+from PyQt6.QtGui import QPixmap, QImage
+from PyQt6.QtWidgets import QMainWindow, QFileDialog, QTableWidgetItem
 from PyQt6.QtGui import QPixmap
 from PyQt6.uic import load_ui
 from anpr import data
@@ -50,9 +51,12 @@ class Workspace(QMainWindow):
         self.resetTables()
     
     def resizeEvent(self, event):
-        self.updateCanvasSize()
-        self.resizeFitToCanvas()
-        self.updateUi()
+        try:
+            self.updateCanvasSize()
+            self.resizeFitToCanvas()
+            self.updateUi()
+        except:
+            print('')
 
     def exit(self):
         QCoreApplication.exit(0)
@@ -78,20 +82,21 @@ class Workspace(QMainWindow):
         self.resetTables()
         self.showStatusBarMessage('Canvas Reset!')
     
-    def selectFile(self):
+    def selectFile(self, types='PNG JPEG (*.jpg *.png)'):
         fileDialog = QFileDialog(self)
         options = QFileDialog.options(fileDialog)
-        filePath, _ = QFileDialog.getOpenFileName(self, 'Select a file', 'app/assets/images', 'PNG JPEG (*.jpg *.png)', options=options)
+        filePath, _ = QFileDialog.getOpenFileName(self, 'Select a file', 'app/assets/images', types, options=options)
         return filePath
    
-    def saveFile(self):
+    def getSavePath(self, types='PNG (*.png);;JPEG (*.jpg);;All Files (*)'):
         fileDialog = QFileDialog(self)
         options = QFileDialog.options(fileDialog)
-        self.savePath, _ = QFileDialog.getSaveFileName(self, 'Save File As', 'app/assets/images', 'PNG (*.png);;JPEG (*.jpg);;All Files (*)', options=options)
+        self.savePath, _ = QFileDialog.getSaveFileName(self, 'Save File As', 'app/assets/images', types, options=options)
     
     def resizeFitToCanvas(self):
         if self.canvasImage.any() != None:
             height, width, channel = self.canvasImage.shape
+            # if height > 0 and width > 0:
             if width > height:
                 height = int((self.canvasWidth/width)*height)
                 self.canvasImage = cv2.resize(self.canvasImage, (self.canvasWidth, height))
@@ -136,6 +141,43 @@ class Workspace(QMainWindow):
         self.canvasHeight = self.canvas.height()
     
     def updateUi(self):
+        height, width, channel = self.canvasImage.shape
+        qimage = QImage(self.canvasImage.data, width, height, width*channel, QImage.Format.Format_RGB888)
+        pixmap = QPixmap.fromImage(qimage)
+        self.canvas.setPixmap(pixmap)
+
+    def save(self):
+        if not self.savePath:
+            self.getSavePath()
+        if self.savePath:
+            self.saveFile()
+            self.showStatusBarMessage(f"Successfully Saved {os.path.basename(self.savePath)} at {os.path.dirname(self.savePath)}!")
+    
+    def saveAs(self):
+        self.getSavePath()
+        if self.savePath:
+            self.saveFile()
+            self.showStatusBarMessage(f"Successfully Saved {os.path.basename(self.savePath)} at {os.path.dirname(self.savePath)}!")
+
+    def new(self):
+        filePath = self.selectFile()
+        if filePath:
+            self.resetTables()
+            self.filename = os.path.basename(filePath)
+            self.loadFileFromPath(filePath)
+            self.resizeFitToCanvas()
+            self.canvasImage = cv2.cvtColor(self.canvasImage, cv2.COLOR_BGR2RGB)
+            self.savePath = None
+            self.imageLoaded = True
+            self.updateUi()
+            self.showStatusBarMessage(f"Successfully Loaded {self.filename}!")
+        else:
+            self.showStatusBarMessage(f"Cancelled!")
+    
+    def loadFileFromPath(self, path):
+        pass
+
+    def exportStatsToCSV(self):
         pass
 
     def scan(self):
@@ -144,14 +186,5 @@ class Workspace(QMainWindow):
     def scanText(self):
         pass
 
-    def save(self):
-        pass
-
-    def saveAs(self):
-        pass
-
-    def new(self):
-        pass
-
-    def exportStatsToCSV(self):
+    def saveFile(self):
         pass

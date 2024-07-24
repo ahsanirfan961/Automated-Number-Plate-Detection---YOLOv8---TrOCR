@@ -1,11 +1,9 @@
 from anpr.workspace import Workspace
-from PyQt6.QtGui import QPixmap, QImage
+from PyQt6.QtGui import QPixmap
 from anpr import data
 from ultralytics import YOLO
 from PyQt6.QtCore import QObject, QThread, pyqtSignal
 import cv2
-import numpy as np
-import os
 
 class ImageSpace(Workspace):
 
@@ -16,48 +14,16 @@ class ImageSpace(Workspace):
 
         self.initCanvasImage = QPixmap('app/assets/images/image icon small.png')
         self.resetCanvas()
-    
 
-    def new(self):
-        imgPath = self.selectFile()
-        if imgPath:
-            self.resetTables()
-            self.filename = os.path.basename(imgPath)
-            self.canvasImage = cv2.imread(imgPath)
-            self.resizeFitToCanvas()
-            self.canvasImage = cv2.cvtColor(self.canvasImage, cv2.COLOR_BGR2RGB)
-            self.savePath = None
-            self.imageLoaded = True
-            self.updateUi()
-            self.showStatusBarMessage(f"Successfully Loaded {self.filename}!")
-
-
+    def loadFileFromPath(self, path):
+            self.canvasImage = cv2.imread(path)
             self.insertRowInTable(self.infoTable, ['Image name', self.filename])
             self.insertRowInTable(self.infoTable, ['Dimensions', f"{self.canvasImage.shape[1]} x {self.canvasImage.shape[0]}"])
             self.insertRowInTable(self.infoTable, ['Size', f"{self.getImageSize()} KB"])
-        else:
-            self.showStatusBarMessage(f"Cancelled!")
     
-    def save(self):
-        if not self.savePath:
-            self.saveFile()
-        if self.savePath:
-            saveImg = cv2.cvtColor(self.canvasImage, cv2.COLOR_RGB2BGR)
-            cv2.imwrite(self.savePath, saveImg)
-            self.showStatusBarMessage(f"Successfully Saved {os.path.basename(self.savePath)} at {os.path.dirname(self.savePath)}!")
-    
-    def saveAs(self):
-        self.saveFile()
-        if self.savePath:
-            saveImg = cv2.cvtColor(self.canvasImage, cv2.COLOR_RGB2BGR)
-            cv2.imwrite(self.savePath, saveImg)
-            self.showStatusBarMessage(f"Successfully Saved {os.path.basename(self.savePath)} at {os.path.dirname(self.savePath)}!")
-    
-    def updateUi(self):
-        height, width, channel = self.canvasImage.shape
-        qimage = QImage(self.canvasImage.data, width, height, width*channel, QImage.Format.Format_RGB888)
-        pixmap = QPixmap.fromImage(qimage)
-        self.canvas.setPixmap(pixmap)
+    def saveFile(self):
+        saveImg = cv2.cvtColor(self.canvasImage, cv2.COLOR_RGB2BGR)
+        cv2.imwrite(self.savePath, saveImg)
     
     def scan(self):
         if self.imageLoaded:
