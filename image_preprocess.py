@@ -113,9 +113,11 @@ def get_grayscale(image):
 
 #7
 def thresholding(image):
- return cv2.threshold(image, 127, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU) [1]
+ _, img = cv2.threshold(image, 64, 255, cv2.THRESH_BINARY_INV)
+ return img
 
 
 def preprocess_image(image):
-    return cv2.resize(image,(int(image.shape[1]/1),int(image.shape[0]/1)))
-    
+    img=get_grayscale(image)
+    img2=thresholding(img)
+    return img2
