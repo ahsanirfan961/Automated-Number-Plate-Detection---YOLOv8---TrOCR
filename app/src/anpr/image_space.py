@@ -1,6 +1,8 @@
 from anpr.workspace import Workspace
 from PyQt6.QtGui import QPixmap
 from anpr import data
+from anpr.plate_detection import PlateDetector
+from anpr.ocr_reader import OCRReader
 from ultralytics import YOLO
 from PyQt6.QtCore import QObject, QThread, pyqtSignal
 import cv2, os
@@ -30,57 +32,100 @@ class ImageSpace(Workspace):
         self.showStatusBarMessage(f"Successfully Saved {os.path.basename(self.savePath)} at {os.path.dirname(self.savePath)}!")
     
     def scan(self):
-        if self.imageLoaded:
+        if self.imageLoaded and len(self.plates) == 0:
             self.detectionTable.clearContents()
             self.detectionTable.setRowCount(0)
-            self.scanThread = ScanImage(self)
+            self.scanThread = self.ScanPlates(self)
             self.scanThread.statusBarSignal.connect(self.showStatusBarMessage)
             self.scanThread.updateUiSignal.connect(self.updateUi)
             self.scanThread.loadingSignal.connect(self.loading.update)
             self.loading.reset()
             self.scanThread.start()
         else:
-            self.showStatusBarMessage('No image loaded!')
+            if len(self.plates) > 0:
+                self.showStatusBarMessage('Already scanned for number plates!')
+            else:
+                self.showStatusBarMessage('No Video loaded!')
+            
+    def scanText(self):
+        if self.imageLoaded and len(self.plateTexts) == 0:
+            self.plateTextTable.clearContents()
+            self.plateTextTable.setRowCount(0)
+            self.scanThread = self.ScanPlateText(self)
+            self.scanThread.statusBarSignal.connect(self.showStatusBarMessage)
+            self.scanThread.updateUiSignal.connect(self.updateUi)
+            self.scanThread.loadingSignal.connect(self.loading.update)
+            self.loading.reset()
+            self.scanThread.start()
+        else:
+            if len(self.plateTexts) > 0:
+                self.showStatusBarMessage('Already scanned for number plates text!')
+            else:
+                self.showStatusBarMessage('No image loaded!')
 
-class ScanImage(QThread):
-    statusBarSignal = pyqtSignal(str)
-    loadingSignal = pyqtSignal(int)
-    updateUiSignal = pyqtSignal()
+    def populateDetectionTable(self):
+        self.insertRowInTable(self.detectionTable, ['# of plates', f"{len(self.plateCoords)}"])
+        self.insertRowInTable(self.detectionTable, ['Positions', '------------'])
+        for i, position in enumerate(self.plateCoords):
+            self.insertRowInTable(self.detectionTable, [f"Plate - {self.track_id[i]}", f"{position['x1']}x{position['y1']}, {position['x2']}x{position['y2']}"])
+        self.insertRowInTable(self.detectionTable, ['Accuracy', '------------'])
+        for i, acc in enumerate(self.plateAccuracy):
+            self.insertRowInTable(self.detectionTable, [f"Plate - {self.track_id[i]}", f"{round(acc*100, 2)}%"])
 
-    def __init__(self, imageSpace):
-        super().__init__()
-        self.imageSpace = imageSpace
+    def populatePlateTextTable(self):
+        for i, text in enumerate(self.plateTexts):
+            self.insertRowInTable(self.plateTextTable, [f"Plate - {self.track_id[i]}", f"{text}"])
 
-    def run(self):
-        self.loadingSignal.emit(5)
-        model = YOLO(self.imageSpace.modelPath)
-        self.loadingSignal.emit(40)
-        prediction = model(self.imageSpace.canvasImage)[0]
-        self.loadingSignal.emit(70)
+    class ScanPlates(QThread):
+        statusBarSignal = pyqtSignal(str)
+        loadingSignal = pyqtSignal(int)
+        updateUiSignal = pyqtSignal()
 
-        positions = []
-        accuracy = []
-        for result in prediction.boxes.data.tolist():
-            x1, y1, x2, y2, score, class_id = result
-            self.imageSpace.markPlate(prediction.names[int(class_id)].upper(), x1, y1, x2, y2)
-            positions.append({
-                'x1': int(x1),
-                'y1': int(y1),
-                'x2': int(x2),
-                'y2': int(y2),
-            })
-            accuracy.append(score)
-        
-        self.loadingSignal.emit(85)
+        def __init__(self, imageSpace: 'ImageSpace'):
+            super().__init__()
+            self.imageSpace = imageSpace
 
-        self.imageSpace.insertRowInTable(self.imageSpace.detectionTable, ['# of plates', f"{len(prediction.boxes.data.tolist())}"])
-        self.imageSpace.insertRowInTable(self.imageSpace.detectionTable, ['Positions', '------------'])
-        for i, position in enumerate(positions):
-            self.imageSpace.insertRowInTable(self.imageSpace.detectionTable, [f"Plate - {i+1}", f"{position['x1']}x{position['y1']}, {position['x2']}x{position['y2']}"])
-        self.imageSpace.insertRowInTable(self.imageSpace.detectionTable, ['Accuracy', '------------'])
-        for i, acc in enumerate(accuracy):
-            self.imageSpace.insertRowInTable(self.imageSpace.detectionTable, [f"Plate - {i+1}", f"{round(acc*100, 2)}%"])
-        
-        self.loadingSignal.emit(100)
-        self.updateUiSignal.emit()
-        self.statusBarSignal.emit('Successfuly scanned for number plates!')
+        def run(self):
+            self.loadingSignal.emit(5)
+            self.loadingSignal.emit(20)
+            if self.imageSpace.plateDetector is None:
+                self.imageSpace.plateDetector = PlateDetector()
+            self.imageSpace.plates, self.imageSpace.plateCoords, self.imageSpace.plateAccuracy, self.imageSpace.track_id = self.imageSpace.plateDetector.detect(self.imageSpace.canvasImage)
+            self.loadingSignal.emit(70)
+            self.imageSpace.markPlates(self.imageSpace.canvasImage, self.imageSpace.plateCoords, self.imageSpace.track_id)
+            self.loadingSignal.emit(85)
+
+            self.imageSpace.populateDetectionTable()
+            
+            self.loadingSignal.emit(100)
+            self.updateUiSignal.emit()
+            self.statusBarSignal.emit('Successfuly scanned for number plates!')
+            self.imageSpace.scan_text_btn.setEnabled(True)
+
+    class ScanPlateText(QThread):
+        statusBarSignal = pyqtSignal(str)
+        loadingSignal = pyqtSignal(int)
+        updateUiSignal = pyqtSignal()
+
+        def __init__(self, imageSpace: 'ImageSpace'):
+            super().__init__()
+            self.imageSpace = imageSpace
+
+        def run(self):
+            self.loadingSignal.emit(5)
+            self.loadingSignal.emit(20)
+            
+            if self.imageSpace.ocrReader is None:
+                self.imageSpace.ocrReader = OCRReader()
+
+            for plate in self.imageSpace.plates:
+                self.imageSpace.plateTexts.append(self.imageSpace.ocrReader.read(plate))
+            self.loadingSignal.emit(70)
+
+            self.imageSpace.markPlatesText(self.imageSpace.canvasImage, self.imageSpace.plateCoords, self.imageSpace.plateTexts)
+            self.loadingSignal.emit(85)
+
+            self.imageSpace.populatePlateTextTable()
+            self.loadingSignal.emit(100)
+            self.updateUiSignal.emit()
+            self.statusBarSignal.emit('Successfuly scanned for number plates text!')

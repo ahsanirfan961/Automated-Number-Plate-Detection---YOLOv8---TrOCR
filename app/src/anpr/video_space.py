@@ -2,9 +2,9 @@ from anpr.workspace import Workspace
 from PyQt6.QtGui import QPixmap
 from anpr import data
 from PyQt6 import uic
-from ultralytics import YOLO
+from anpr.plate_detection import PlateDetector
 from PyQt6.QtCore import QObject, QThread, pyqtSignal, QTimer
-import cv2, time
+import cv2, time, os
 
 class VideoSpace(Workspace):
 
@@ -134,6 +134,31 @@ class VideoSpace(Workspace):
     
     def saveFile(self):
         self.videoWriter.start()
+    
+    def scan(self):
+        if self.imageLoaded and len(self.plates) == 0:
+            self.detectionTable.clearContents()
+            self.detectionTable.setRowCount(0)
+            self.scanThread = self.ScanPlates(self)
+            self.scanThread.statusBarSignal.connect(self.showStatusBarMessage)
+            self.scanThread.updateUiSignal.connect(self.updateUi)
+            self.scanThread.loadingSignal.connect(self.loading.update)
+            self.loading.reset()
+            self.scanThread.start()
+        else:
+            if len(self.plates) > 0:
+                self.showStatusBarMessage('Already scanned for number plates!')
+            else:
+                self.showStatusBarMessage('No image loaded!')
+
+    def populateDetectionTable(self):
+        self.insertRowInTable(self.detectionTable, ['# of plates', f"{len(self.plateCoords)}"])
+        self.insertRowInTable(self.detectionTable, ['Positions', '------------'])
+        for i, position in enumerate(self.plateCoords):
+            self.insertRowInTable(self.detectionTable, [f"Plate - {self.track_id[i]}", f"{position['x1']}x{position['y1']}, {position['x2']}x{position['y2']}"])
+        self.insertRowInTable(self.detectionTable, ['Accuracy', '------------'])
+        for i, acc in enumerate(self.plateAccuracy):
+            self.insertRowInTable(self.detectionTable, [f"Plate - {self.track_id[i]}", f"{round(acc*100, 2)}%"])
 
     class VideoWriter(QThread):
         loadingSignal = pyqtSignal(int)
@@ -144,7 +169,7 @@ class VideoSpace(Workspace):
         
         def run(self):
             self.loadingSignal.emit(1)
-            ext = self.videoSpace.filename.split('.')[-1]
+            ext = self.videoSpace.savePath.split('.')[-1]
             codec = data.codecs[ext]
 
             self.loadingSignal.emit(20)
@@ -167,8 +192,6 @@ class VideoSpace(Workspace):
             self.loadingSignal.emit(100)
             self.videoSpace.showStatusBarMessage(f"Video Saved Successfully at {self.videoSpace.savePath}")
 
-        
-
     class VideoPlayer(QThread):
         def __init__(self, videoSpace: 'VideoSpace') -> None:
             super().__init__()
@@ -184,3 +207,71 @@ class VideoSpace(Workspace):
                     self.videoSpace.updateUi()
                     self.videoSpace.updateSlider()
                     time.sleep(1/self.videoSpace.fps)
+        
+    class ScanPlates(QThread):
+        statusBarSignal = pyqtSignal(str)
+        loadingSignal = pyqtSignal(int)
+        updateUiSignal = pyqtSignal()
+
+        def __init__(self, videoSpace: 'VideoSpace'):
+            super().__init__()
+            self.videoSpace = videoSpace
+
+        def run(self):
+            self.loadingSignal.emit(5)
+
+            self.videoSpace.plateDetector = PlateDetector()
+            self.loadingSignal.emit(20)
+
+            ext = self.videoSpace.filename.split('.')[-1]
+            codec = data.codecs[ext]
+
+            fourcc = cv2.VideoWriter_fourcc(*codec)
+            out = cv2.VideoWriter('tmp.'+ext, fourcc, self.videoSpace.fps, (self.videoSpace.videoWidth, self.videoSpace.videoHeight))
+            self.loadingSignal.emit(30)
+
+            currentFrame = self.videoSpace.videoCap.get(cv2.CAP_PROP_POS_FRAMES)
+            self.videoSpace.videoCap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+
+            self.loadingSignal.emit(50)
+            while(self.videoSpace.videoCap.isOpened()):
+                ret, frame = self.videoSpace.videoCap.read()
+                if ret:
+                    plates, coord, accuracy, track_id = self.videoSpace.plateDetector.detectAndTrack(frame)
+                    
+                    for i, tr_id in enumerate(track_id):
+                        if not tr_id in self.videoSpace.track_id:
+                            self.videoSpace.track_id.append(tr_id)
+                            self.videoSpace.plates.append(plates[i])
+                            self.videoSpace.plateCoords.append(coord[i])
+                            self.videoSpace.plateAccuracy.append(accuracy[i])
+
+                    self.videoSpace.markPlates(frame, coord, track_id)
+                    out.write(frame)
+                else:
+                    break
+
+            self.loadingSignal.emit(80)
+            self.videoSpace.videoCap.release()
+            out.release()
+
+            self.videoSpace.populateDetectionTable()
+
+            self.loadingSignal.emit(90)
+            self.videoSpace.videoCap = cv2.VideoCapture('tmp.'+ext)
+            self.videoSpace.getVideoFrame()
+
+            try:
+                os.remove('tmp.'+ext)
+                print(f"File {'tmp.'+ext} has been deleted successfully")
+            except FileNotFoundError:
+                print(f"File {'tmp.'+ext} not found")
+            except PermissionError:
+                print(f"Permission denied: {'tmp.'+ext}")
+            except Exception as e:
+                print(f"Error: {e}")
+
+            self.loadingSignal.emit(100)
+            self.updateUiSignal.emit()
+            self.statusBarSignal.emit('Successfuly scanned for number plates!')
+            self.videoSpace.scan_text_btn.setEnabled(True)

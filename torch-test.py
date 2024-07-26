@@ -2,6 +2,7 @@ import cv2 as cv
 import os
 from singleFrameComplete import process_frame
 import pickle
+
 video_path = 'tests/vid1.mp4'    
 cap = cv.VideoCapture(video_path)
 fourcc = cv.VideoWriter_fourcc(*'mp4v') 
@@ -16,7 +17,7 @@ while True:
     ret, frame = cap.read()
     if not ret:
         break
-    processed+=1 
+    processed+=1  
     if(processed%20==0):
      p,text,coord,img_s=process_frame(frame)    
      processed_frame.append(img_s)

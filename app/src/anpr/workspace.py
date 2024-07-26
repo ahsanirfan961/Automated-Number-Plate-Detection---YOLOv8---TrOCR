@@ -14,13 +14,19 @@ class Workspace(QMainWindow):
     initCanvasImage = QPixmap()
     canvasImage = None
     savePath = None
-    modelPath = 'runs/detect/train - dataset 1 --- 40 epoch/weights/best.pt'
     imageLoaded = False
     DISAPPEAR = True
     DISAPPEAR_FALSE = False
     newFileTypes = ''
     saveFileTypes = ''
     filename = ''
+    plates = []
+    plateCoords = []
+    plateAccuracy = []
+    plateTexts = []
+    track_id = []
+    plateDetector = None
+    ocrReader = None
 
     def __init__(self):
         super(Workspace, self).__init__()
@@ -83,6 +89,7 @@ class Workspace(QMainWindow):
         self.canvasImage = np.ones([self.canvasHeight, self.canvasWidth, 3], dtype=np.uint8)*255
         self.imageLoaded = False
         self.resetTables()
+        self.resetLocalData()
         self.showStatusBarMessage('Canvas Reset!')
     
     def selectFile(self, types):
@@ -97,7 +104,7 @@ class Workspace(QMainWindow):
         self.savePath, _ = QFileDialog.getSaveFileName(self, 'Save File As', 'app/assets/images', types, options=options)
     
     def resizeFitToCanvas(self):
-        if self.canvasImage.any() != None:
+        if self.canvasImage.any():
             height, width, channel = self.canvasImage.shape
             # if height > 0 and width > 0:
             if width > height:
@@ -134,10 +141,18 @@ class Workspace(QMainWindow):
         _, buffer = cv2.imencode(f".{ext}", self.canvasImage)
         return round(buffer.size/1024, 2)
     
-    def markPlate(self, text, x1, y1, x2, y2):
-        cv2.rectangle(self.canvasImage, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
-        cv2.rectangle(self.canvasImage, (int(x1), int(y1-20)), (int(x2), int(y1)), (0, 255, 0), -1)
-        cv2.putText(self.canvasImage, text, (int(x1+5), int(y1 - 5)),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
+    def markPlates(self, frame, plateCoords, track_id):
+        for i, position in enumerate(plateCoords):
+            x1, y1, x2, y2 = position['x1'], position['y1'], position['x2'], position['y2']
+            cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
+            cv2.rectangle(frame, (int(x1), int(y2)), (int(x2), int(y2+20)), (0, 255, 0), -1)
+            cv2.putText(frame, f"P {track_id[i]}", (int(x1+5), int(y2 + 15)),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1, cv2.LINE_AA)
+
+    def markPlatesText(self, frame, plateCoords, plateTexts):
+        for i, position in enumerate(plateCoords):
+            x1, y1, x2, y2 = position['x1'], position['y1'], position['x2'], position['y2']    
+            cv2.rectangle(frame, (int(x1), int(y1-20)), (int(x2), int(y1)), (0, 255, 0), -1)
+            cv2.putText(frame, plateTexts[i], (int(x1+5), int(y1 - 5)),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1, cv2.LINE_AA)
     
     def updateCanvasSize(self):
         self.canvasWidth = self.canvas.width()
@@ -171,10 +186,24 @@ class Workspace(QMainWindow):
                 self.imageLoaded = True
                 self.canvasImage = cv2.cvtColor(self.canvasImage, cv2.COLOR_BGR2RGB)
                 self.updateUi()
+                self.resetLocalData()
+                self.scan_text_btn.setEnabled(False)
                 self.showStatusBarMessage(f"Successfully Loaded {self.filename}!")
         else:
             self.showStatusBarMessage(f"Cancelled!")
-    
+
+    def populateDetectionTable(self, plateCoords, plateAccuracy, track_id):
+        pass
+
+    def populatePlateTextTable(self, plateTexts, track_id):
+        pass
+
+    def resetLocalData(self):
+        self.plates = []
+        self.plateCoords = []
+        self.plateAccuracy = []
+        self.plateTexts = []
+
     def loadFileFromPath(self, path):
         pass
 
