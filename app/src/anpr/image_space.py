@@ -1,10 +1,7 @@
 from anpr.workspace import Workspace
 from PyQt6.QtGui import QPixmap
-from anpr import data
 from anpr.plate_detection import *
 from anpr.ocr_reader import *
-from anpr.ocr_reader import OCRReader
-from PyQt6.QtCore import QThread, pyqtSignal
 import cv2, os
 
 class ImageSpace(Workspace):

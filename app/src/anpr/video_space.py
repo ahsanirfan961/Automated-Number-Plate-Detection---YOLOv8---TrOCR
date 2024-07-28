@@ -4,10 +4,9 @@ from anpr import data
 from PyQt6 import uic
 from anpr.plate_detection import *
 from anpr.ocr_reader import *
-from PyQt6.QtCore import QThread, pyqtSignal, QTimer
-import cv2, time, os
-from statistics import mode, mean
-from anpr.ocr_reader import OCRReader
+from PyQt6.QtCore import QThread, pyqtSignal
+import cv2, time
+from statistics import mode
 
 class VideoSpace(Workspace):
 
