@@ -58,6 +58,8 @@ class Workspace(QMainWindow):
         self.loading = ProgressBar(self.statusbar)
         self.loading.setGeometry(500, 4, 300, 12)
 
+        self.scan_text_btn.setDisabled(True)
+
         # Clear the tables
         self.resetTables()
     

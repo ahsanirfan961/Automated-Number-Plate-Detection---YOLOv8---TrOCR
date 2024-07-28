@@ -36,7 +36,11 @@ class PlateTextScanner(QThread):
             self.loadingSignal.emit(85)
         
         def detectFromVideo(self):
-            for plate in self.workspace.plates:
+            self.workspace.enableVideoPlayerButtons(False)
+
+            self.loadingSignal.emit(30)
+            for i, plate in enumerate(self.workspace.plates):
+                self.loadingSignal.emit(int(30 + (i/len(self.workspace.plates))*40))
                 plate = cv2.cvtColor(plate, cv2.COLOR_BGR2RGB)
                 self.workspace.plateTexts.append(self.workspace.ocrReader.read(plate))
             self.loadingSignal.emit(70)
@@ -46,17 +50,16 @@ class PlateTextScanner(QThread):
 
             fourcc = cv2.VideoWriter_fourcc(*codec)
             out = cv2.VideoWriter(os.getenv('TEMP')+'ocr.'+ext, fourcc, self.workspace.fps, (self.workspace.videoWidth, self.workspace.videoHeight))
-            self.loadingSignal.emit(75)
 
             currentFrame = self.workspace.videoCap.get(cv2.CAP_PROP_POS_FRAMES)
             self.workspace.videoCap.set(cv2.CAP_PROP_POS_FRAMES, 0)
 
-            self.loadingSignal.emit(80)
 
             i=0
             while(self.workspace.videoCap.isOpened()):
                 ret, frame = self.workspace.videoCap.read()
                 if ret:
+                    self.loadingSignal.emit(int(70 + (self.workspace.videoCap.get(cv2.CAP_PROP_POS_FRAMES)/self.workspace.frameCount)*25))
                     self.workspace.markPlatesText(frame, self.workspace.plateCoords[i], self.workspace.plateTexts)
                     out.write(frame)
                 else:
@@ -70,6 +73,8 @@ class PlateTextScanner(QThread):
             self.workspace.videoCap = cv2.VideoCapture(os.getenv('TEMP')+'ocr.'+ext)
             self.workspace.videoCap.set(cv2.CAP_PROP_POS_FRAMES, currentFrame)
             self.workspace.getVideoFrame()
+
+            self.workspace.enableVideoPlayerButtons(True)
 
         def run(self):
             self.loadingSignal.emit(5)

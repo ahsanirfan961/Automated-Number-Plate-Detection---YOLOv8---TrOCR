@@ -407,6 +407,16 @@ background-color: rgb(85, 85, 85);
        </property>
       </spacer>
      </item>
+     <item>
+      <widget class="QLabel" name="time">
+       <property name="styleSheet">
+        <string notr="true">color: rgba(200,200,200,255);</string>
+       </property>
+       <property name="text">
+        <string>00:00</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
   </layout>

@@ -127,11 +127,13 @@ class VideoSpace(Workspace):
     def updateSlider(self):
         currentFrame = self.videoCap.get(cv2.CAP_PROP_POS_FRAMES)
         self.videoBar.video_slider.setValue(int(1000*(currentFrame/self.frameCount)))
+        self.videoBar.time.setText(self.getCurrentVideoTime(self.videoCap))
     
     def moveVideo(self):
         self.videoRunning = False
         movePosition = (self.videoBar.video_slider.value()/1000)*self.frameCount
         self.videoCap.set(cv2.CAP_PROP_POS_FRAMES, movePosition)
+        self.videoBar.time.setText(self.getCurrentVideoTime(self.videoCap))
         self.getVideoFrame()
         self.updateUi()
     
@@ -200,6 +202,15 @@ class VideoSpace(Workspace):
     def populatePlateTextTable(self):
         for i, text in enumerate(self.plateTexts):
             self.insertRowInTable(self.plateTextTable, [f"Plate - {self.track_id[i]}", f"{text}"])
+
+    def enableVideoPlayerButtons(self, value):
+        self.videoBar.play_btn.setEnabled(value)
+        self.videoBar.pause_btn.setEnabled(value)
+        self.videoBar.forward_btn.setEnabled(value)
+        self.videoBar.backward_btn.setEnabled(value)
+        self.videoBar.start_btn.setEnabled(value)
+        self.videoBar.end_btn.setEnabled(value)
+        self.videoBar.stop_btn.setEnabled(value)
 
     class VideoWriter(QThread):
         loadingSignal = pyqtSignal(int)

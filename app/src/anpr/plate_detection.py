@@ -74,6 +74,8 @@ class PlateScanner(QThread):
             self.loadingSignal.emit(85)
         
         def detectFromVideo(self):
+            self.workspace.enableVideoPlayerButtons(False)
+
             ext = self.workspace.filename.split('.')[-1]
             codec = data.codecs[ext]
 
@@ -84,9 +86,10 @@ class PlateScanner(QThread):
             currentFrame = self.workspace.videoCap.get(cv2.CAP_PROP_POS_FRAMES)
             self.workspace.videoCap.set(cv2.CAP_PROP_POS_FRAMES, 0)
 
-            self.loadingSignal.emit(50)
+            self.loadingSignal.emit(40)
             while(self.workspace.videoCap.isOpened()):
                 ret, frame = self.workspace.videoCap.read()
+                self.loadingSignal.emit(int(40 + (self.workspace.videoCap.get(cv2.CAP_PROP_POS_FRAMES)/self.workspace.frameCount)*50))
                 if ret:
                     plates, coord, accuracy, track_id = self.workspace.plateDetector.detectAndTrack(frame)
                     plateCoordPerFrame = {}
@@ -110,7 +113,6 @@ class PlateScanner(QThread):
                 else:
                     break
 
-            self.loadingSignal.emit(80)
             self.workspace.videoCap.release()
             out.release()
 
@@ -118,11 +120,14 @@ class PlateScanner(QThread):
             self.workspace.videoCap = cv2.VideoCapture(os.getenv('TEMP')+'detect.'+ext)
             self.workspace.videoCap.set(cv2.CAP_PROP_POS_FRAMES, currentFrame)
             self.workspace.getVideoFrame()
+
+            self.workspace.enableVideoPlayerButtons(True)
         
         def run(self):
             self.loadingSignal.emit(5)
             self.workspace.plateDetector = YoloPlateDetector()
             self.loadingSignal.emit(20)
+            self.workspace.scan_btn.setDisabled(True)
 
             if self.mode == MODE_IMAGE:
                 self.detectFromImage()
@@ -133,5 +138,6 @@ class PlateScanner(QThread):
             self.loadingSignal.emit(100)
             self.updateUiSignal.emit()
             self.statusBarSignal.emit('Successfuly scanned for number plates!')
+            self.workspace.scan_btn.setEnabled(True)
             self.workspace.scan_text_btn.setEnabled(True)
     
