@@ -4,4 +4,5 @@ datasets/*/labels
 __pycache__
 yolov8n.pt
 tests
-app/assets/images/*.mp4
+assets/images/*.mp4
+src/anpr/__pycache__
