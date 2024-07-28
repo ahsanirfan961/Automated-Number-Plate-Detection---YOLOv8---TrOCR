@@ -2,7 +2,8 @@ from anpr.workspace import Workspace
 from PyQt6.QtGui import QPixmap
 from anpr import data
 from PyQt6 import uic
-from anpr.plate_detection import PlateDetector
+from anpr.plate_detection import *
+from anpr.ocr_reader import *
 from PyQt6.QtCore import QThread, pyqtSignal, QTimer
 import cv2, time, os
 from statistics import mode, mean
@@ -141,7 +142,7 @@ class VideoSpace(Workspace):
         if self.imageLoaded and len(self.plates) == 0:
             self.detectionTable.clearContents()
             self.detectionTable.setRowCount(0)
-            self.scanThread = self.ScanPlates(self)
+            self.scanThread = PlateScanner(self, MODE_VIDEO)
             self.scanThread.statusBarSignal.connect(self.showStatusBarMessage)
             self.scanThread.updateUiSignal.connect(self.updateUi)
             self.scanThread.loadingSignal.connect(self.loading.update)
@@ -157,16 +158,12 @@ class VideoSpace(Workspace):
         if self.imageLoaded and len(self.plateTexts) == 0:
             self.plateTextTable.clearContents()
             self.plateTextTable.setRowCount(0)
-            self.scanThread = self.ScanPlateText(self)
+            self.scanThread = PlateTextScanner(self, MODE_VIDEO)
             self.scanThread.statusBarSignal.connect(self.showStatusBarMessage)
             self.scanThread.updateUiSignal.connect(self.updateUi)
             self.scanThread.loadingSignal.connect(self.loading.update)
             self.loading.reset()
             self.scanThread.start()
-
-            for plate in self.plates:
-                cv2.imshow('win', plate)
-                cv2.waitKey(0)
         else:
             if len(self.plateTexts) > 0:
                 self.showStatusBarMessage('Already scanned for number plates text!')
@@ -252,125 +249,4 @@ class VideoSpace(Workspace):
                     self.videoSpace.updateSlider()
                     time.sleep(1/self.videoSpace.fps)
         
-    class ScanPlates(QThread):
-        statusBarSignal = pyqtSignal(str)
-        loadingSignal = pyqtSignal(int)
-        updateUiSignal = pyqtSignal()
-
-        def __init__(self, videoSpace: 'VideoSpace'):
-            super().__init__()
-            self.videoSpace = videoSpace
-
-        def run(self):
-            self.loadingSignal.emit(5)
-
-            self.videoSpace.plateDetector = PlateDetector()
-            self.loadingSignal.emit(20)
-
-            ext = self.videoSpace.filename.split('.')[-1]
-            codec = data.codecs[ext]
-
-            fourcc = cv2.VideoWriter_fourcc(*codec)
-            out = cv2.VideoWriter('detect.'+ext, fourcc, self.videoSpace.fps, (self.videoSpace.videoWidth, self.videoSpace.videoHeight))
-            self.loadingSignal.emit(30)
-
-            currentFrame = self.videoSpace.videoCap.get(cv2.CAP_PROP_POS_FRAMES)
-            self.videoSpace.videoCap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-
-            self.loadingSignal.emit(50)
-            while(self.videoSpace.videoCap.isOpened()):
-                ret, frame = self.videoSpace.videoCap.read()
-                if ret:
-                    plates, coord, accuracy, track_id = self.videoSpace.plateDetector.detectAndTrack(frame)
-                    plateCoordPerFrame = {}
-                    for i, tr_id in enumerate(track_id):
-                        plateCoordPerFrame[tr_id] = coord[i]
-                        if not tr_id in self.videoSpace.track_id:
-                            self.videoSpace.track_id.append(tr_id)
-                            self.videoSpace.plateArrivals.append(self.videoSpace.getCurrentVideoTime(self.videoSpace.videoCap))
-                            self.videoSpace.plateRetreats.append(self.videoSpace.getCurrentVideoTime(self.videoSpace.videoCap))
-                            self.videoSpace.plates.append(plates[i])
-                            self.videoSpace.plateAccuracy.append([accuracy[i]])
-                        else:
-                            index = self.videoSpace.track_id.index(tr_id)
-                            self.videoSpace.plateRetreats[index] = self.videoSpace.getCurrentVideoTime(self.videoSpace.videoCap)
-                            self.videoSpace.plateAccuracy[index].append(accuracy[i])
-                            if len(plates[i]) * len(plates[i][0]) > len(self.videoSpace.plates[index]) * len(self.videoSpace.plates[index][0]):
-                                self.videoSpace.plates[index] = plates[i]
-                    self.videoSpace.markPlates(frame, coord, track_id)
-                    self.videoSpace.plateCoords.append(plateCoordPerFrame)
-                    out.write(frame)
-                else:
-                    break
-
-            self.loadingSignal.emit(80)
-            self.videoSpace.videoCap.release()
-            out.release()
-
-            self.videoSpace.populateDetectionTable()
-
-            self.loadingSignal.emit(90)
-            self.videoSpace.videoCap = cv2.VideoCapture('detect.'+ext)
-            self.videoSpace.videoCap.set(cv2.CAP_PROP_POS_FRAMES, currentFrame)
-            self.videoSpace.getVideoFrame()
-
-            self.loadingSignal.emit(100)
-            self.updateUiSignal.emit()
-            self.statusBarSignal.emit('Successfuly scanned for number plates!')
-            self.videoSpace.scan_text_btn.setEnabled(True)
     
-    class ScanPlateText(QThread):
-        statusBarSignal = pyqtSignal(str)
-        loadingSignal = pyqtSignal(int)
-        updateUiSignal = pyqtSignal()
-
-        def __init__(self, videoSpace: 'VideoSpace'):
-            super().__init__()
-            self.videoSpace = videoSpace
-
-        def run(self):
-            self.loadingSignal.emit(5)
-            
-            if self.videoSpace.ocrReader is None:
-                self.videoSpace.ocrReader = OCRReader()
-
-            self.loadingSignal.emit(20)
-            for plate in self.videoSpace.plates:
-                plate = cv2.cvtColor(plate, cv2.COLOR_BGR2RGB)
-                self.videoSpace.plateTexts.append(self.videoSpace.ocrReader.read(plate))
-            self.loadingSignal.emit(70)
-
-            ext = self.videoSpace.filename.split('.')[-1]
-            codec = data.codecs[ext]
-
-            fourcc = cv2.VideoWriter_fourcc(*codec)
-            out = cv2.VideoWriter('ocr.'+ext, fourcc, self.videoSpace.fps, (self.videoSpace.videoWidth, self.videoSpace.videoHeight))
-            self.loadingSignal.emit(75)
-
-            currentFrame = self.videoSpace.videoCap.get(cv2.CAP_PROP_POS_FRAMES)
-            self.videoSpace.videoCap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-
-            self.loadingSignal.emit(80)
-
-            i=0
-            while(self.videoSpace.videoCap.isOpened()):
-                ret, frame = self.videoSpace.videoCap.read()
-                if ret:
-                    self.videoSpace.markPlatesText(frame, self.videoSpace.plateCoords[i], self.videoSpace.plateTexts)
-                    out.write(frame)
-                else:
-                    break
-                i=i+1
-            
-            self.loadingSignal.emit(95)
-            self.videoSpace.videoCap.release()
-            out.release()
-
-            self.videoSpace.populatePlateTextTable()
-            self.videoSpace.videoCap = cv2.VideoCapture('ocr.'+ext)
-            self.videoSpace.videoCap.set(cv2.CAP_PROP_POS_FRAMES, currentFrame)
-            self.videoSpace.getVideoFrame()
-
-            self.loadingSignal.emit(100)
-            self.updateUiSignal.emit()
-            self.statusBarSignal.emit('Successfuly scanned for number plates text!')

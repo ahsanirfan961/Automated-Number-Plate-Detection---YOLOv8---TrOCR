@@ -1,5 +1,9 @@
-import cv2, easyocr, numpy as np
+import cv2, easyocr, os, numpy as np
 from PIL import Image
+from PyQt6.QtCore import QThread, pyqtSignal
+from anpr.workspace import Workspace
+from anpr import data
+from anpr.plate_detection import MODE_IMAGE, MODE_VIDEO
 
 class OCRReader:
     def __init__(self):
@@ -10,6 +14,78 @@ class OCRReader:
         result = self.reader.readtext(self.preProcessor.preprocess_image(image))
         for res in result:
             return res[1]
+
+
+class PlateTextScanner(QThread):
+        statusBarSignal = pyqtSignal(str)
+        loadingSignal = pyqtSignal(int)
+        updateUiSignal = pyqtSignal()
+
+        def __init__(self, workspace: 'Workspace', mode: 'int'):
+            super().__init__()
+            self.workspace = workspace
+            self.mode = mode
+        
+        def detectFromImage(self):
+            for plate in self.workspace.plates:
+                plate = cv2.cvtColor(plate, cv2.COLOR_BGR2RGB)
+                self.workspace.plateTexts.append(self.workspace.ocrReader.read(plate))
+            self.loadingSignal.emit(70)
+
+            self.workspace.markPlatesText(self.workspace.canvasImage, self.workspace.plateCoords, self.workspace.plateTexts)
+            self.loadingSignal.emit(85)
+        
+        def detectFromVideo(self):
+            for plate in self.workspace.plates:
+                plate = cv2.cvtColor(plate, cv2.COLOR_BGR2RGB)
+                self.workspace.plateTexts.append(self.workspace.ocrReader.read(plate))
+            self.loadingSignal.emit(70)
+
+            ext = self.workspace.filename.split('.')[-1]
+            codec = data.codecs[ext] 
+
+            fourcc = cv2.VideoWriter_fourcc(*codec)
+            out = cv2.VideoWriter(os.getenv('TEMP')+'ocr.'+ext, fourcc, self.workspace.fps, (self.workspace.videoWidth, self.workspace.videoHeight))
+            self.loadingSignal.emit(75)
+
+            currentFrame = self.workspace.videoCap.get(cv2.CAP_PROP_POS_FRAMES)
+            self.workspace.videoCap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+
+            self.loadingSignal.emit(80)
+
+            i=0
+            while(self.workspace.videoCap.isOpened()):
+                ret, frame = self.workspace.videoCap.read()
+                if ret:
+                    self.workspace.markPlatesText(frame, self.workspace.plateCoords[i], self.workspace.plateTexts)
+                    out.write(frame)
+                else:
+                    break
+                i=i+1
+            
+            self.loadingSignal.emit(95)
+            self.workspace.videoCap.release()
+            out.release()
+
+            self.workspace.videoCap = cv2.VideoCapture(os.getenv('TEMP')+'ocr.'+ext)
+            self.workspace.videoCap.set(cv2.CAP_PROP_POS_FRAMES, currentFrame)
+            self.workspace.getVideoFrame()
+
+        def run(self):
+            self.loadingSignal.emit(5)
+            if self.workspace.ocrReader is None:
+                self.workspace.ocrReader = OCRReader()
+            self.loadingSignal.emit(20)
+
+            if self.mode == MODE_IMAGE:
+                self.detectFromImage()
+            elif self.mode == MODE_VIDEO:
+                self.detectFromVideo()
+
+            self.workspace.populatePlateTextTable()
+            self.loadingSignal.emit(100)
+            self.updateUiSignal.emit()
+            self.statusBarSignal.emit('Successfuly scanned for number plates text!')
 
 
 class ImagePreProcessor:
@@ -104,9 +180,4 @@ class ImagePreProcessor:
         return img2
     
 
-# img = cv2.imread('tests/car.jpg')
-# ocr = OCRReader()
-# print(ocr.read(img))
-# # cv2.imshow('image', img)
-# cv2.waitKey(0)
-# cv2.destroyAllWindows()
+

@@ -1,6 +1,6 @@
-import cv2
+import os
 
-try:
-    img = cv2.imread('a.png')
-except:
-    print('cant load')
+# Get the path of the temp folder
+temp_folder = os.getenv('TEMP')
+
+print(f"The path of the temp folder is: {temp_folder}")
