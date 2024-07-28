@@ -27,6 +27,8 @@ class Workspace(QMainWindow):
     track_id = []
     plateDetector = None
     ocrReader = None
+    plateArrivals = []
+    plateRetreats = []
 
     def __init__(self):
         super(Workspace, self).__init__()
@@ -203,6 +205,9 @@ class Workspace(QMainWindow):
         self.plateCoords = []
         self.plateAccuracy = []
         self.plateTexts = []
+        self.track_id = []
+        self.plateArrivals = []
+        self.plateRetreats =[]
 
     def loadFileFromPath(self, path):
         pass

@@ -119,6 +119,7 @@ class ImageSpace(Workspace):
                 self.imageSpace.ocrReader = OCRReader()
 
             for plate in self.imageSpace.plates:
+                plate = cv2.cvtColor(plate, cv2.COLOR_BGR2RGB)
                 self.imageSpace.plateTexts.append(self.imageSpace.ocrReader.read(plate))
             self.loadingSignal.emit(70)
 
