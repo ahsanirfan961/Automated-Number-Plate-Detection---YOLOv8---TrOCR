@@ -6,3 +6,4 @@ yolov8n.pt
 tests
 assets/images/*.mp4
 src/anpr/__pycache__
+.venv
