@@ -1,16 +1,17 @@
-from anpr.workspace import Workspace
+from anpr.workspace import *
 from PyQt6.QtGui import QPixmap
 from anpr import data
 from PyQt6 import uic
 from anpr.plate_detection import *
 from anpr.ocr_reader import *
 from PyQt6.QtCore import QThread, pyqtSignal
-import cv2, time
 from statistics import mode
+from time import sleep
+from cv2 import CAP_PROP_FPS, CAP_PROP_FRAME_COUNT
 
 class VideoSpace(Workspace):
 
-    videoCap = cv2.VideoCapture()
+    videoCap = VideoCapture()
     videoRunning = False
     videoPlayer = None
     videoLoaded = False
@@ -47,14 +48,14 @@ class VideoSpace(Workspace):
 
     def loadFileFromPath(self, path):
         self.videoCap.release()
-        self.videoCap = cv2.VideoCapture(path)
+        self.videoCap = VideoCapture(path)
         ret, self.canvasImage = self.videoCap.read()
         if not ret:
             self.showStatusBarMessage('Error: Video Cannot Be Loaded!')
             return False
         
-        self.fps = self.videoCap.get(cv2.CAP_PROP_FPS)
-        self.frameCount = self.videoCap.get(cv2.CAP_PROP_FRAME_COUNT)
+        self.fps = self.videoCap.get(CAP_PROP_FPS)
+        self.frameCount = self.videoCap.get(CAP_PROP_FRAME_COUNT)
         self.videoLength = int(self.frameCount/self.fps)
         mins = int(self.videoLength/60)
         secs = int(self.videoLength%60)
@@ -85,30 +86,30 @@ class VideoSpace(Workspace):
 
     def forwardVideo(self):
         self.videoRunning = False
-        currentFrame = self.videoCap.get(cv2.CAP_PROP_POS_FRAMES)
-        self.videoCap.set(cv2.CAP_PROP_POS_FRAMES, currentFrame + int(self.videoMoveOffsetSeconds*self.fps))
+        currentFrame = self.videoCap.get(CAP_PROP_POS_FRAMES)
+        self.videoCap.set(CAP_PROP_POS_FRAMES, currentFrame + int(self.videoMoveOffsetSeconds*self.fps))
         self.getVideoFrame()
         self.updateUi()
         self.videoRunning = True
 
     def backwardVideo(self):
         self.videoRunning = False
-        currentFrame = self.videoCap.get(cv2.CAP_PROP_POS_FRAMES)
-        self.videoCap.set(cv2.CAP_PROP_POS_FRAMES, currentFrame - int(self.videoMoveOffsetSeconds*self.fps))
+        currentFrame = self.videoCap.get(CAP_PROP_POS_FRAMES)
+        self.videoCap.set(CAP_PROP_POS_FRAMES, currentFrame - int(self.videoMoveOffsetSeconds*self.fps))
         self.getVideoFrame()
         self.updateUi()
         self.videoRunning = True
     
     def moveToStart(self):
         self.videoRunning = False
-        self.videoCap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+        self.videoCap.set(CAP_PROP_POS_FRAMES, 0)
         self.getVideoFrame()
         self.updateUi()
         self.updateSlider()
 
     def moveToEnd(self):
         self.videoRunning = False
-        self.videoCap.set(cv2.CAP_PROP_POS_FRAMES, self.frameCount - 1)
+        self.videoCap.set(CAP_PROP_POS_FRAMES, self.frameCount - 1)
         self.getVideoFrame()
         self.updateUi()
         self.updateSlider()
@@ -120,18 +121,18 @@ class VideoSpace(Workspace):
         ret, self.canvasImage = self.videoCap.read()
         if not ret:
             return False
-        self.canvasImage = cv2.cvtColor(self.canvasImage, cv2.COLOR_BGR2RGB)
+        self.canvasImage = cvtColor(self.canvasImage, COLOR_BGR2RGB)
         return True
     
     def updateSlider(self):
-        currentFrame = self.videoCap.get(cv2.CAP_PROP_POS_FRAMES)
+        currentFrame = self.videoCap.get(CAP_PROP_POS_FRAMES)
         self.videoBar.video_slider.setValue(int(1000*(currentFrame/self.frameCount)))
         self.videoBar.time.setText(self.getCurrentVideoTime(self.videoCap))
     
     def moveVideo(self):
         self.videoRunning = False
         movePosition = (self.videoBar.video_slider.value()/1000)*self.frameCount
-        self.videoCap.set(cv2.CAP_PROP_POS_FRAMES, movePosition)
+        self.videoCap.set(CAP_PROP_POS_FRAMES, movePosition)
         self.videoBar.time.setText(self.getCurrentVideoTime(self.videoCap))
         self.getVideoFrame()
         self.updateUi()
@@ -172,7 +173,7 @@ class VideoSpace(Workspace):
                 self.showStatusBarMessage('No image loaded!')
 
     def getCurrentVideoTime(self, cap):
-        currentTime = (cap.get(cv2.CAP_PROP_POS_FRAMES)/self.frameCount)*self.videoLength
+        currentTime = (cap.get(CAP_PROP_POS_FRAMES)/self.frameCount)*self.videoLength
         mins = int(currentTime/60)
         secs = int(currentTime%60)
         if(mins<10):
@@ -186,8 +187,8 @@ class VideoSpace(Workspace):
             position = plateCoords[tr_id]
             index = self.track_id.index(tr_id)
             x1, y1, x2, y2 = position['x1'], position['y1'], position['x2'], position['y2']
-            cv2.rectangle(frame, (int(x1), int(y1-20)), (int(x2), int(y1)), (0, 255, 0), -1)
-            cv2.putText(frame, plateTexts[index], (int(x1+5), int(y1 - 5)),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1, cv2.LINE_AA)
+            rectangle(frame, (int(x1), int(y1-20)), (int(x2), int(y1)), (0, 255, 0), -1)
+            putText(frame, plateTexts[index], (int(x1+5), int(y1 - 5)),FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1, LINE_AA)
 
     def populateDetectionTable(self):
         self.insertRowInTable(self.detectionTable, ['# of plates', f"{len(self.track_id)}"])
@@ -196,7 +197,7 @@ class VideoSpace(Workspace):
             self.insertRowInTable(self.detectionTable, [f"Plate - {self.track_id[i]}", f"from {self.plateArrivals[i]} to {self.plateRetreats[i]}"])
         self.insertRowInTable(self.detectionTable, ['Accuracy', '------------'])
         for i, acc in enumerate(self.plateAccuracy):
-            self.insertRowInTable(self.detectionTable, [f"Plate - {self.track_id[i]}", f"{round(mode(acc)*100, 2)}%"])
+            self.insertRowInTable(self.detectionTable, [f"Plate - {self.track_id[i]}", f"{round(mode(acc)*100, 2)}%"]),
 
     def enableVideoPlayerButtons(self, value):
         self.videoBar.play_btn.setEnabled(value)
@@ -220,12 +221,12 @@ class VideoSpace(Workspace):
             codec = data.codecs[ext]
 
             self.loadingSignal.emit(20)
-            fourcc = cv2.VideoWriter_fourcc(*codec)
-            out = cv2.VideoWriter(self.videoSpace.savePath, fourcc, self.videoSpace.fps, (self.videoSpace.videoWidth, self.videoSpace.videoHeight))
+            fourcc = VideoWriter_fourcc(*codec)
+            out = VideoWriter(self.videoSpace.savePath, fourcc, self.videoSpace.fps, (self.videoSpace.videoWidth, self.videoSpace.videoHeight))
 
             self.loadingSignal.emit(30)
-            currentFrame = self.videoSpace.videoCap.get(cv2.CAP_PROP_POS_FRAMES)
-            self.videoSpace.videoCap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            currentFrame = self.videoSpace.videoCap.get(CAP_PROP_POS_FRAMES)
+            self.videoSpace.videoCap.set(CAP_PROP_POS_FRAMES, 0)
 
             self.loadingSignal.emit(50)
             while(self.videoSpace.videoCap.isOpened()):
@@ -235,7 +236,7 @@ class VideoSpace(Workspace):
                 else:
                     break
             self.loadingSignal.emit(90)
-            self.videoSpace.videoCap.set(cv2.CAP_PROP_POS_FRAMES, currentFrame)
+            self.videoSpace.videoCap.set(CAP_PROP_POS_FRAMES, currentFrame)
             self.loadingSignal.emit(100)
             self.videoSpace.showStatusBarMessage(f"Video Saved Successfully at {self.videoSpace.savePath}")
 
@@ -248,11 +249,11 @@ class VideoSpace(Workspace):
             while self.videoSpace.videoCap.isOpened():
                 while self.videoSpace.videoRunning:
                     if not self.videoSpace.getVideoFrame():
-                        self.videoSpace.videoCap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                        self.videoSpace.videoCap.set(CAP_PROP_POS_FRAMES, 0)
                         self.videoSpace.showStatusBarMessage('Video Finished!')
                         return
                     self.videoSpace.updateUi()
                     self.videoSpace.updateSlider()
-                    time.sleep(1/self.videoSpace.fps)
+                    sleep(1/self.videoSpace.fps)
         
     

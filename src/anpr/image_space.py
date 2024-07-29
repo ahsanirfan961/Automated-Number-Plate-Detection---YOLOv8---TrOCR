@@ -2,7 +2,7 @@ from anpr.workspace import Workspace
 from PyQt6.QtGui import QPixmap
 from anpr.plate_detection import *
 from anpr.ocr_reader import *
-import cv2, os
+from cv2 import imread, COLOR_RGB2BGR
 
 class ImageSpace(Workspace):
  
@@ -15,7 +15,7 @@ class ImageSpace(Workspace):
         self.resetCanvas()
 
     def loadFileFromPath(self, path):
-            self.canvasImage = cv2.imread(path)
+            self.canvasImage = imread(path)
             if self.canvasImage is None:
                 return False
             self.insertRowInTable(self.infoTable, ['Image name', self.filename])
@@ -24,9 +24,9 @@ class ImageSpace(Workspace):
             return True
     
     def saveFile(self):
-        saveImg = cv2.cvtColor(self.canvasImage, cv2.COLOR_RGB2BGR)
-        cv2.imwrite(self.savePath, saveImg)
-        self.showStatusBarMessage(f"Successfully Saved {os.path.basename(self.savePath)} at {os.path.dirname(self.savePath)}!")
+        saveImg = cvtColor(self.canvasImage, COLOR_RGB2BGR)
+        imwrite(self.savePath, saveImg)
+        self.showStatusBarMessage(f"Successfully Saved {path.basename(self.savePath)} at {path.dirname(self.savePath)}!")
     
     def scan(self):
         if self.imageLoaded and len(self.plates) == 0:
@@ -68,4 +68,3 @@ class ImageSpace(Workspace):
         self.insertRowInTable(self.detectionTable, ['Accuracy', '------------'])
         for i, acc in enumerate(self.plateAccuracy):
             self.insertRowInTable(self.detectionTable, [f"Plate - {self.track_id[i]}", f"{round(acc*100, 2)}%"])
-            

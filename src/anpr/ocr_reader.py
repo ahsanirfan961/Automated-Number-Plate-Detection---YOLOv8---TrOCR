@@ -1,13 +1,14 @@
-import cv2, easyocr, os, numpy as np
-from PIL import Image
 from PyQt6.QtCore import QThread, pyqtSignal
-from anpr.workspace import Workspace
+from anpr.workspace import *
 from anpr import data
 from anpr.plate_detection import MODE_IMAGE, MODE_VIDEO
+from cv2 import CAP_PROP_POS_FRAMES, VideoWriter, VideoWriter_fourcc, VideoCapture, fastNlMeansDenoisingColored, COLOR_BGR2GRAY, threshold, THRESH_BINARY_INV, THRESH_OTSU, MORPH_ELLIPSE, getStructuringElement, morphologyEx, MORPH_OPEN, imwrite
+from os import getenv
+from easyocr import Reader
 
 class OCRReader:
     def __init__(self):
-        self.reader = easyocr.Reader(['en'])
+        self.reader = Reader(['en'])
         self.preProcessor = ImagePreProcessor()
 
     def read(self, image):
@@ -28,7 +29,7 @@ class PlateTextScanner(QThread):
         
         def detectFromImage(self):
             for plate in self.workspace.plates:
-                plate = cv2.cvtColor(plate, cv2.COLOR_BGR2RGB)
+                plate = cvtColor(plate, COLOR_BGR2RGB)
                 result = self.workspace.ocrReader.read(plate)
                 if result is None:
                     self.workspace.plateTexts.append(('Nil', 0))
@@ -47,12 +48,12 @@ class PlateTextScanner(QThread):
             self.workspace.enableVideoPlayerButtons(False)
 
             self.loadingSignal.emit(30)
-            currentFrame = self.workspace.videoCap.get(cv2.CAP_PROP_POS_FRAMES)
+            currentFrame = self.workspace.videoCap.get(CAP_PROP_POS_FRAMES)
 
             # Old Logic
             # for i, plate in enumerate(self.workspace.plates):
             #     self.loadingSignal.emit(int(30 + (i/len(self.workspace.plates))*40))
-            #     plate = cv2.cvtColor(plate, cv2.COLOR_BGR2RGB)
+            #     plate = cvtColor(plate, COLOR_BGR2RGB)
             #     result = self.workspace.ocrReader.read(plate)
             #     if result is None:
             #         self.workspace.plateTexts.append(('Nil', 0))
@@ -61,7 +62,7 @@ class PlateTextScanner(QThread):
 
 
             # New Logic
-            self.workspace.videoCap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            self.workspace.videoCap.set(CAP_PROP_POS_FRAMES, 0)
             
             self.workspace.plateTexts = []
             for tr_id in self.workspace.track_id:
@@ -71,11 +72,11 @@ class PlateTextScanner(QThread):
             while(self.workspace.videoCap.isOpened()):
                 ret, frame = self.workspace.videoCap.read()
                 if ret:
-                    self.loadingSignal.emit(int(30 + (self.workspace.videoCap.get(cv2.CAP_PROP_POS_FRAMES)/self.workspace.frameCount)*40))
+                    self.loadingSignal.emit(int(30 + (self.workspace.videoCap.get(CAP_PROP_POS_FRAMES)/self.workspace.frameCount)*40))
                     for tr_id in self.workspace.plateCoords[i].keys():
                         coord = self.workspace.plateCoords[i][tr_id]
                         plate = frame[coord['y1']:coord['y2'], coord['x1']:coord['x2']]
-                        plate = cv2.cvtColor(plate, cv2.COLOR_BGR2RGB)
+                        plate = cvtColor(plate, COLOR_BGR2RGB)
                         result = self.workspace.ocrReader.read(plate)
                         if result is None:
                             continue
@@ -92,10 +93,10 @@ class PlateTextScanner(QThread):
             ext = self.workspace.filename.split('.')[-1]
             codec = data.codecs[ext] 
 
-            fourcc = cv2.VideoWriter_fourcc(*codec)
-            out = cv2.VideoWriter(os.getenv('TEMP')+'ocr.'+ext, fourcc, self.workspace.fps, (self.workspace.videoWidth, self.workspace.videoHeight))
+            fourcc = VideoWriter_fourcc(*codec)
+            out = VideoWriter(getenv('TEMP')+'ocr.'+ext, fourcc, self.workspace.fps, (self.workspace.videoWidth, self.workspace.videoHeight))
 
-            self.workspace.videoCap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            self.workspace.videoCap.set(CAP_PROP_POS_FRAMES, 0)
 
             texts = []
             for text, score in self.workspace.plateTexts:
@@ -105,7 +106,7 @@ class PlateTextScanner(QThread):
             while(self.workspace.videoCap.isOpened()):
                 ret, frame = self.workspace.videoCap.read()
                 if ret:
-                    self.loadingSignal.emit(int(70 + (self.workspace.videoCap.get(cv2.CAP_PROP_POS_FRAMES)/self.workspace.frameCount)*25))
+                    self.loadingSignal.emit(int(70 + (self.workspace.videoCap.get(CAP_PROP_POS_FRAMES)/self.workspace.frameCount)*25))
                     self.workspace.markPlatesText(frame, self.workspace.plateCoords[i], texts)
                     out.write(frame)
                 else:
@@ -116,8 +117,8 @@ class PlateTextScanner(QThread):
             self.workspace.videoCap.release()
             out.release()
 
-            self.workspace.videoCap = cv2.VideoCapture(os.getenv('TEMP')+'ocr.'+ext)
-            self.workspace.videoCap.set(cv2.CAP_PROP_POS_FRAMES, currentFrame)
+            self.workspace.videoCap = VideoCapture(getenv('TEMP')+'ocr.'+ext)
+            self.workspace.videoCap.set(CAP_PROP_POS_FRAMES, currentFrame)
             self.workspace.getVideoFrame()
 
             self.workspace.enableVideoPlayerButtons(True)
@@ -142,23 +143,22 @@ class PlateTextScanner(QThread):
 class ImagePreProcessor:
     
     def remove_noise(self, image):
-        return cv2.fastNlMeansDenoisingColored(image, None, 10, 10, 7, 15)
+        return fastNlMeansDenoisingColored(image, None, 10, 10, 7, 15)
 
     def get_grayscale(self, image):
-        return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        return cvtColor(image, COLOR_BGR2GRAY)
 
     def thresholding(self, image):
-        thresh = cv2.threshold(image,0,255,cv2.THRESH_BINARY_INV|cv2.THRESH_OTSU)[1]
+        thresh = threshold(image,0,255,THRESH_BINARY_INV|THRESH_OTSU)[1]
         return thresh
 
     def opening(self, image):
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
-        opening = cv2.morphologyEx(image, cv2.MORPH_OPEN, kernel)
+        kernel = getStructuringElement(MORPH_ELLIPSE, (2, 2))
+        opening = morphologyEx(image, MORPH_OPEN, kernel)
         return opening
 
     def preprocess_image(self, image):
         dst = self.remove_noise(image)  # Using remove_noise method
         img = self.get_grayscale(dst)
         thresh=self.thresholding(img)
-        cv2.imwrite("threshed.jpg",thresh)
         return thresh

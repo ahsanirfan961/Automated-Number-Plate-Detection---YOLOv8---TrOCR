@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QStackedWidget, QApplication
-import sys
+from sys import argv
 
-app = QApplication(sys.argv)
+app = QApplication(argv)
 stackedWidget = QStackedWidget()
 
 codecs = {

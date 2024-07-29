@@ -1,4 +1,6 @@
-import webbrowser, cv2, numpy as np, os
+from cv2 import resize, cvtColor, imencode, rectangle, putText, FONT_HERSHEY_SIMPLEX, LINE_AA, COLOR_BGR2RGB
+from numpy import ones, uint8
+from webbrowser import open
 from PyQt6.QtCore import QCoreApplication, QTimer
 from PyQt6.QtGui import QPixmap, QImage
 from PyQt6.QtWidgets import QMainWindow, QFileDialog, QTableWidgetItem
@@ -6,6 +8,7 @@ from PyQt6.QtGui import QPixmap
 from PyQt6.uic import load_ui
 from anpr import data
 from anpr.progress_bar import ProgressBar
+from os import path
 
 class Workspace(QMainWindow):
 
@@ -86,11 +89,11 @@ class Workspace(QMainWindow):
         self.goToGithub()
 
     def goToGithub(self):
-        webbrowser.open('https://github.com/ahsanirfan961/Automated-Number-Plate-Detection---YOLOv8---EasyOCR')
+        open('https://github.com/ahsanirfan961/Automated-Number-Plate-Detection---YOLOv8---EasyOCR')
 
     def resetCanvas(self):
         self.canvas.setPixmap(self.initCanvasImage)
-        self.canvasImage = np.ones([self.canvasHeight, self.canvasWidth, 3], dtype=np.uint8)*255
+        self.canvasImage = ones([self.canvasHeight, self.canvasWidth, 3], dtype=uint8)*255
         self.imageLoaded = False
         self.resetTables()
         self.resetLocalData()
@@ -113,10 +116,10 @@ class Workspace(QMainWindow):
             # if height > 0 and width > 0:
             if width > height:
                 height = int((self.canvasWidth/width)*height)
-                self.canvasImage = cv2.resize(self.canvasImage, (self.canvasWidth, height))
+                self.canvasImage = resize(self.canvasImage, (self.canvasWidth, height))
             else:
                 width = int((self.canvasHeight/height)*width)
-                self.canvasImage = cv2.resize(self.canvasImage, (width, self.canvasHeight))
+                self.canvasImage = resize(self.canvasImage, (width, self.canvasHeight))
     
     def showStatusBarMessage(self, message, flag=DISAPPEAR):
         self.statusbar.showMessage(message)
@@ -142,21 +145,21 @@ class Workspace(QMainWindow):
     
     def getImageSize(self):
         ext = self.filename.split('.')[-1]
-        _, buffer = cv2.imencode(f".{ext}", self.canvasImage)
+        _, buffer = imencode(f".{ext}", self.canvasImage)
         return round(buffer.size/1024, 2)
     
     def markPlates(self, frame, plateCoords, track_id):
         for i, position in enumerate(plateCoords):
             x1, y1, x2, y2 = position['x1'], position['y1'], position['x2'], position['y2']
-            cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
-            cv2.rectangle(frame, (int(x1), int(y2)), (int(x2), int(y2+20)), (0, 255, 0), -1)
-            cv2.putText(frame, f"P {track_id[i]}", (int(x1+5), int(y2 + 15)),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1, cv2.LINE_AA)
+            rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
+            rectangle(frame, (int(x1), int(y2)), (int(x2), int(y2+20)), (0, 255, 0), -1)
+            putText(frame, f"P {track_id[i]}", (int(x1+5), int(y2 + 15)),FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1, LINE_AA)
 
     def markPlatesText(self, frame, plateCoords, plateTexts):
         for i, position in enumerate(plateCoords):
             x1, y1, x2, y2 = position['x1'], position['y1'], position['x2'], position['y2']    
-            cv2.rectangle(frame, (int(x1), int(y1-20)), (int(x2), int(y1)), (0, 255, 0), -1)
-            cv2.putText(frame, plateTexts[i], (int(x1+5), int(y1 - 5)),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1, cv2.LINE_AA)
+            rectangle(frame, (int(x1), int(y1-20)), (int(x2), int(y1)), (0, 255, 0), -1)
+            putText(frame, plateTexts[i], (int(x1+5), int(y1 - 5)),FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1, LINE_AA)
     
     def updateCanvasSize(self):
         self.canvasWidth = self.canvas.width()
@@ -184,11 +187,11 @@ class Workspace(QMainWindow):
         filePath = self.selectFile(self.newFileTypes)
         if filePath:
             self.resetTables()
-            self.filename = os.path.basename(filePath)
+            self.filename = path.basename(filePath)
             if self.loadFileFromPath(filePath):
                 self.savePath = None
                 self.imageLoaded = True
-                self.canvasImage = cv2.cvtColor(self.canvasImage, cv2.COLOR_BGR2RGB)
+                self.canvasImage = cvtColor(self.canvasImage, COLOR_BGR2RGB)
                 self.updateUi()
                 self.resetLocalData()
                 self.scan_text_btn.setEnabled(False)

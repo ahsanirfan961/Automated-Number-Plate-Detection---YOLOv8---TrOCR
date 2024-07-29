@@ -1,5 +1,4 @@
-from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QMainWindow, QWidget
+from PyQt6.QtWidgets import QMainWindow
 from PyQt6.uic import load_ui
 from anpr.image_space import ImageSpace
 from anpr.video_space import VideoSpace

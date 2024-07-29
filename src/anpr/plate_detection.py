@@ -1,9 +1,10 @@
-import cv2, os
 from ultralytics import YOLO
 from anpr.data import modelPath
 from PyQt6.QtCore import QThread, pyqtSignal
 from anpr.workspace import Workspace
+from cv2 import CAP_PROP_POS_FRAMES, VideoWriter, VideoWriter_fourcc, VideoCapture
 from anpr import data
+from os import getenv
 
 MODE_IMAGE = 0
 MODE_VIDEO = 1
@@ -79,17 +80,17 @@ class PlateScanner(QThread):
             ext = self.workspace.filename.split('.')[-1]
             codec = data.codecs[ext]
 
-            fourcc = cv2.VideoWriter_fourcc(*codec)
-            out = cv2.VideoWriter(os.getenv('TEMP')+'detect.'+ext, fourcc, self.workspace.fps, (self.workspace.videoWidth, self.workspace.videoHeight))
+            fourcc = VideoWriter_fourcc(*codec)
+            out = VideoWriter(getenv('TEMP')+'detect.'+ext, fourcc, self.workspace.fps, (self.workspace.videoWidth, self.workspace.videoHeight))
             self.loadingSignal.emit(30)
 
-            currentFrame = self.workspace.videoCap.get(cv2.CAP_PROP_POS_FRAMES)
-            self.workspace.videoCap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            currentFrame = self.workspace.videoCap.get(CAP_PROP_POS_FRAMES)
+            self.workspace.videoCap.set(CAP_PROP_POS_FRAMES, 0)
 
             self.loadingSignal.emit(40)
             while(self.workspace.videoCap.isOpened()):
                 ret, frame = self.workspace.videoCap.read()
-                self.loadingSignal.emit(int(40 + (self.workspace.videoCap.get(cv2.CAP_PROP_POS_FRAMES)/self.workspace.frameCount)*50))
+                self.loadingSignal.emit(int(40 + (self.workspace.videoCap.get(CAP_PROP_POS_FRAMES)/self.workspace.frameCount)*50))
                 if ret:
                     plates, coord, accuracy, track_id = self.workspace.plateDetector.detectAndTrack(frame)
                     plateCoordPerFrame = {}
@@ -117,8 +118,8 @@ class PlateScanner(QThread):
             out.release()
 
             self.loadingSignal.emit(90)
-            self.workspace.videoCap = cv2.VideoCapture(os.getenv('TEMP')+'detect.'+ext)
-            self.workspace.videoCap.set(cv2.CAP_PROP_POS_FRAMES, currentFrame)
+            self.workspace.videoCap = VideoCapture(getenv('TEMP')+'detect.'+ext)
+            self.workspace.videoCap.set(CAP_PROP_POS_FRAMES, currentFrame)
             self.workspace.getVideoFrame()
 
             self.workspace.enableVideoPlayerButtons(True)

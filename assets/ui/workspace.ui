@@ -997,7 +997,6 @@ QMenu::item:pressed {
     <addaction name="actionNew"/>
     <addaction name="actionSave"/>
     <addaction name="actionSave_As"/>
-    <addaction name="actionExport_Stats_to_CSV"/>
     <addaction name="separator"/>
     <addaction name="actionGo_To_Menu"/>
     <addaction name="actionExit"/>
