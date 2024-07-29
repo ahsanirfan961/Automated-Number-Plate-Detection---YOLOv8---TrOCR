@@ -150,13 +150,13 @@ class Workspace(QMainWindow):
             x1, y1, x2, y2 = position['x1'], position['y1'], position['x2'], position['y2']
             cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
             cv2.rectangle(frame, (int(x1), int(y2)), (int(x2), int(y2+20)), (0, 255, 0), -1)
-            cv2.putText(frame, f"P {track_id[i]}", (int(x1+5), int(y2 + 15)),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1, cv2.LINE_AA)
+            cv2.putText(frame, f"P {track_id[i]}", (int(x1+5), int(y2 + 15)),cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0), 2, cv2.LINE_AA)
 
     def markPlatesText(self, frame, plateCoords, plateTexts):
         for i, position in enumerate(plateCoords):
             x1, y1, x2, y2 = position['x1'], position['y1'], position['x2'], position['y2']    
             cv2.rectangle(frame, (int(x1), int(y1-20)), (int(x2), int(y1)), (0, 255, 0), -1)
-            cv2.putText(frame, plateTexts[i], (int(x1+5), int(y1 - 5)),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1, cv2.LINE_AA)
+            cv2.putText(frame, plateTexts[i], (int(x1+5), int(y1 - 5)),cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0), 2, cv2.LINE_AA)
     
     def updateCanvasSize(self):
         self.canvasWidth = self.canvas.width()
