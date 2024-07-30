@@ -65,6 +65,8 @@ class Workspace(QMainWindow):
 
         # Clear the tables
         self.resetTables()
+
+        
     
     def resizeEvent(self, event):
         try:
@@ -102,13 +104,13 @@ class Workspace(QMainWindow):
     def selectFile(self, types):
         fileDialog = QFileDialog(self)
         options = QFileDialog.options(fileDialog)
-        filePath, _ = QFileDialog.getOpenFileName(self, 'Select a file', 'assets/images', types, options=options)
+        filePath, _ = QFileDialog.getOpenFileName(self, 'Select a file', '', types, options=options)
         return filePath
    
     def getSavePath(self, types):
         fileDialog = QFileDialog(self)
         options = QFileDialog.options(fileDialog)
-        self.savePath, _ = QFileDialog.getSaveFileName(self, 'Save File As', 'assets/images', types, options=options)
+        self.savePath, _ = QFileDialog.getSaveFileName(self, 'Save File As', '', types, options=options)
     
     def resizeFitToCanvas(self):
         if self.canvasImage.any():

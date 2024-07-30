@@ -66,7 +66,7 @@ class PlateScanner(QThread):
         def __init__(self, workspace: 'Workspace', mode: 'int'):
             super().__init__()
             self.workspace = workspace
-            self.mode = mode
+            self.mode = mode 
         
         def detectFromImage(self):
             self.workspace.plates, self.workspace.plateCoords, self.workspace.plateAccuracy, self.workspace.track_id = self.workspace.plateDetector.detect(self.workspace.canvasImage)
@@ -125,8 +125,6 @@ class PlateScanner(QThread):
             self.workspace.enableVideoPlayerButtons(True)
         
         def run(self):
-            self.loadingSignal.emit(5)
-            self.workspace.plateDetector = YoloPlateDetector()
             self.loadingSignal.emit(20)
             self.workspace.scan_btn.setDisabled(True)
 

@@ -9,4 +9,4 @@ codecs = {
     'avi': 'XVID'
 }
 
-modelPath = 'runs/detect/train - dataset 1 --- 40 epoch/weights/best.pt'
+modelPath = 'assets/models/d1-40e.pt'

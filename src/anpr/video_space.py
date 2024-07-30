@@ -8,6 +8,7 @@ from PyQt6.QtCore import QThread, pyqtSignal
 from statistics import mode
 from time import sleep
 from cv2 import CAP_PROP_FPS, CAP_PROP_FRAME_COUNT
+from anpr.plate_detection import YoloPlateDetector
 
 class VideoSpace(Workspace):
 
@@ -45,6 +46,7 @@ class VideoSpace(Workspace):
         self.videoPlayer = self.VideoPlayer(self)
         self.videoWriter = self.VideoWriter(self)
         self.videoWriter.loadingSignal.connect(self.loading.update)
+        self.plateDetector = YoloPlateDetector()
 
     def loadFileFromPath(self, path):
         self.videoCap.release()
