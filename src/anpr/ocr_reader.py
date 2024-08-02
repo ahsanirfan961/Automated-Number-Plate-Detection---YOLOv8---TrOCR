@@ -14,10 +14,7 @@ class OCRReader:
         
 
     def read(self, image):
-        img = self.preProcessor.preprocess_image(image)
-        imshow('Plate', img)
-        waitKey(20)
-        result = self.reader.readtext(img)
+        result = self.reader.readtext(self.preProcessor.preprocess_image(image))
         for res in result:
             return (res[1], res[2])
 
@@ -122,10 +119,13 @@ class PlateTextScanner(QThread):
                     break
                 i=i+1  
 
+            keys = []
+
             for key in dict_store:
+                keys.append(key)
                 text_list= [t[0] for t in dict_store[key]]
                 text_list=self.longest_words_and_length(text_list)
-                print(text_list)
+                # print(text_list)
                 txt=''
                 for i in range(len(text_list[0])):
                     txt+=self.most_occurring_char_at_index(text_list,i)
