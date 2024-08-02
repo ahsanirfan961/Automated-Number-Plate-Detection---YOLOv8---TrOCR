@@ -215,20 +215,8 @@ class ImagePreProcessor:
         return cvtColor(image, COLOR_BGR2GRAY)
 
     def thresholding(self, image):
-     # Apply Otsu's thresholding
-     blur = GaussianBlur(image, (5, 5), 0)
-     _, otsu_thresh = threshold(blur, 0, 255, THRESH_BINARY_INV|THRESH_OTSU)
-    
-     # Check if the result is mostly white or mostly black
-     white_ratio = sum(otsu_thresh == 255) / otsu_thresh.size
-     black_ratio = sum(otsu_thresh == 0) / otsu_thresh.size
-    
-     # If the result is mostly white or black, apply an adaptive threshold instead
-     if white_ratio > 0.95 or black_ratio > 0.95:
-        adaptive_thresh = adaptiveThreshold(blur, 255, ADAPTIVE_THRESH_GAUSSIAN_C, THRESH_BINARY_INV, 11, 2)
-        return adaptive_thresh
-    
-     return otsu_thresh
+        thresh = threshold(image,0,255,THRESH_BINARY_INV|THRESH_OTSU)[1]
+        return thresh
  
  
  
