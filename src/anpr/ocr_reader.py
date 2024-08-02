@@ -1,11 +1,13 @@
 from PyQt6.QtCore import QThread, pyqtSignal
 from anpr.workspace import *
 from anpr import data
+from numpy import sum
 from anpr.plate_detection import MODE_IMAGE, MODE_VIDEO
-from cv2 import CAP_PROP_POS_FRAMES, VideoWriter, VideoWriter_fourcc, VideoCapture, fastNlMeansDenoisingColored, COLOR_BGR2GRAY, threshold, THRESH_BINARY_INV, THRESH_OTSU, MORPH_ELLIPSE, getStructuringElement, morphologyEx, MORPH_OPEN, imwrite
+from cv2 import CAP_PROP_POS_FRAMES, VideoWriter, VideoWriter_fourcc, VideoCapture, fastNlMeansDenoisingColored, COLOR_BGR2GRAY, threshold, THRESH_BINARY_INV, THRESH_OTSU, MORPH_ELLIPSE, getStructuringElement, morphologyEx, MORPH_OPEN, imwrite,GaussianBlur,adaptiveThreshold,ADAPTIVE_THRESH_GAUSSIAN_C
 from os import getenv
 from easyocr import Reader
 from collections import Counter
+from re import match
 
 class OCRReader:
     def __init__(self):
@@ -37,7 +39,12 @@ class PlateTextScanner(QThread):
            longest_words = [word for word in words if len(word) == max_length]
            return longest_words
        
-        
+        import re
+
+        def filter_words_symbols(self,words):
+          filtered_words = [word for word in words if match("^[A-Za-z0-9 ]+$", word)]
+          return filtered_words
+
 
         def most_occurring_char_at_index(self,words, index):
           if not words:
@@ -48,14 +55,25 @@ class PlateTextScanner(QThread):
           most_common = char_counter.most_common(1)
           
           if most_common:
-            most_common_char = most_common[0][0]
-            
+            most_common_char = most_common[0][0] 
           else:
             most_common_char = None
     
           return most_common_char       
        
-       
+     
+
+        def filter_by_common_length(self,words):
+          if not words:
+            return []
+          lengths = [len(word) for word in words]
+          length_counts = Counter(lengths)
+          most_common_length = length_counts.most_common(1)[0][0]
+          filtered_words = [word for word in words if len(word) == most_common_length]
+          return filtered_words
+
+
+
         def detectFromImage(self):
             for plate in self.workspace.plates:
                 plate = cvtColor(plate, COLOR_BGR2RGB)
@@ -120,16 +138,21 @@ class PlateTextScanner(QThread):
                          #   self.workspace.plateTexts[self.workspace.track_id.index(tr_id)] = (text, acc)
                 else:
                     break
-                i=i+1  
+                i=i+1 
+            keys=[]     
             for key in dict_store:
+                keys.append(key)
                 text_list= [t[0] for t in dict_store[key]]
-                text_list=self.longest_words_and_length(text_list)
-                print(text_list)
+                text_list=self.filter_words_symbols(text_list)
+                text_list=self.filter_by_common_length(text_list)
                 txt=''
                 for i in range(len(text_list[0])):
                     txt+=self.most_occurring_char_at_index(text_list,i)
-                self.final_text.append(txt)    
-                self.workspace.plateTexts[self.workspace.track_id.index(tr_id)] = (txt, 0.85) 
+                self.final_text.append(txt)
+                self.workspace.plateTexts[self.workspace.track_id.index(key)] = (txt, 0.85) 
+            print(keys)
+            print(self.final_text)    
+            
                 
                 
                     
@@ -195,9 +218,24 @@ class ImagePreProcessor:
         return cvtColor(image, COLOR_BGR2GRAY)
 
     def thresholding(self, image):
-        thresh = threshold(image,0,255,THRESH_BINARY_INV|THRESH_OTSU)[1]
-        return thresh
-
+     # Apply Otsu's thresholding
+     blur = GaussianBlur(image, (5, 5), 0)
+     _, otsu_thresh = threshold(blur, 0, 255, THRESH_BINARY_INV|THRESH_OTSU)
+    
+     # Check if the result is mostly white or mostly black
+     white_ratio = sum(otsu_thresh == 255) / otsu_thresh.size
+     black_ratio = sum(otsu_thresh == 0) / otsu_thresh.size
+    
+     # If the result is mostly white or black, apply an adaptive threshold instead
+     if white_ratio > 0.95 or black_ratio > 0.95:
+        adaptive_thresh = adaptiveThreshold(blur, 255, ADAPTIVE_THRESH_GAUSSIAN_C, THRESH_BINARY_INV, 11, 2)
+        return adaptive_thresh
+    
+     return otsu_thresh
+ 
+ 
+ 
+ 
     def opening(self, image):
         kernel = getStructuringElement(MORPH_ELLIPSE, (2, 2))
         opening = morphologyEx(image, MORPH_OPEN, kernel)
