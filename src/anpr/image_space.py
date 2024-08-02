@@ -68,5 +68,20 @@ class ImageSpace(Workspace):
         for i, position in enumerate(self.plateCoords):
             self.insertRowInTable(self.detectionTable, [f"Plate - {self.track_id[i]}", f"{position['x1']}x{position['y1']}, {position['x2']}x{position['y2']}"])
         self.insertRowInTable(self.detectionTable, ['Accuracy', '------------'])
+        totalAcc = 0
         for i, acc in enumerate(self.plateAccuracy):
             self.insertRowInTable(self.detectionTable, [f"Plate - {self.track_id[i]}", f"{round(acc*100, 2)}%"])
+            totalAcc = totalAcc + round(acc*100, 2)
+        self.insertRowInTable(self.detectionTable, ['Total Accuracy', f"{totalAcc/len(self.plateAccuracy)}%"])
+    
+    def populatePlateTextTable(self):
+        self.insertRowInTable(self.plateTextTable, ['Plate Texts', '------------'])
+        for i, res in enumerate(self.plateTexts):
+            self.insertRowInTable(self.plateTextTable, [f"Plate - {self.track_id[i]}", f"{res[0]}"])
+        
+        self.insertRowInTable(self.plateTextTable, ['Text Accuracy', '------------'])
+        totalAcc = 0
+        for i, res in enumerate(self.plateTexts):
+            self.insertRowInTable(self.plateTextTable, [f"Plate - {self.track_id[i]}", f"{round(res[1]*100, 2)}%"])
+            totalAcc = totalAcc + round(res[1]*100, 2)
+        self.insertRowInTable(self.plateTextTable, ['Total Accuracy', f"{totalAcc/len(self.plateTexts)}%"])

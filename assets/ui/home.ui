@@ -74,6 +74,20 @@ Recognizer</string>
        </item>
        <item>
         <widget class="QFrame" name="optionsFrame">
+         <property name="styleSheet">
+          <string notr="true">QPushButton {
+	background-color: qradialgradient(spread:reflect, cx:0.5, cy:0.5, radius:0.5, fx:0.495, fy:0.494818, stop:0 rgba(41, 41, 41, 255), stop:1 rgba(31, 31, 31, 255));
+	border: 1px solid rgba(255, 255, 255, 0.5);
+	color: white;
+	font: 10pt &quot;Segoe UI&quot;;
+	text-align: left;
+	padding-left: 5px;
+}
+
+QPushButton:hover { 
+	border: 1px solid rgba(255, 255, 255, 1); 
+}</string>
+         </property>
          <property name="frameShape">
           <enum>QFrame::StyledPanel</enum>
          </property>
@@ -129,18 +143,7 @@ font: 600 14pt &quot;Segoe UI&quot;;</string>
              <cursorShape>PointingHandCursor</cursorShape>
             </property>
             <property name="styleSheet">
-             <string notr="true">QPushButton {
-background-color: qradialgradient(spread:reflect, cx:0.5, cy:0.5, radius:0.5, fx:0.495, fy:0.494818, stop:0 rgba(41, 41, 41, 255), stop:1 rgba(31, 31, 31, 255));
-border: 1px solid rgba(255, 255, 255, 0.5);
-color: white;
-font: 10pt &quot;Segoe UI&quot;;
-text-align: left;
-padding-left: 10px
-}
-
-QPushButton:hover { 
-border: 1px solid rgba(255, 255, 255, 1); 
-}</string>
+             <string notr="true"/>
             </property>
             <property name="text">
              <string>From an Image</string>
@@ -175,18 +178,7 @@ border: 1px solid rgba(255, 255, 255, 1);
              <cursorShape>PointingHandCursor</cursorShape>
             </property>
             <property name="styleSheet">
-             <string notr="true">QPushButton {
-background-color: qradialgradient(spread:reflect, cx:0.5, cy:0.5, radius:0.5, fx:0.495, fy:0.494818, stop:0 rgba(41, 41, 41, 255), stop:1 rgba(31, 31, 31, 255));
-border: 1px solid rgba(255, 255, 255, 0.5);
-color: white;
-font: 10pt &quot;Segoe UI&quot;;
-text-align: left;
-padding-left: 5px
-}
-
-QPushButton:hover { 
-border: 1px solid rgba(255, 255, 255, 1); 
-}</string>
+             <string notr="true"/>
             </property>
             <property name="text">
              <string>From a Video</string>

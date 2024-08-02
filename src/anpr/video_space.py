@@ -14,7 +14,7 @@ class VideoSpace(Workspace):
 
     videoCap = VideoCapture()
     videoRunning = False
-    videoPlayer = None
+    videoPlayer = None 
     videoLoaded = False
     videoMoveOffsetSeconds = 5
     videoWriter = None
@@ -198,8 +198,16 @@ class VideoSpace(Workspace):
         for i, position in enumerate(self.track_id):
             self.insertRowInTable(self.detectionTable, [f"Plate - {self.track_id[i]}", f"from {self.plateArrivals[i]} to {self.plateRetreats[i]}"])
         self.insertRowInTable(self.detectionTable, ['Accuracy', '------------'])
+        totalAcc = 0
         for i, acc in enumerate(self.plateAccuracy):
-            self.insertRowInTable(self.detectionTable, [f"Plate - {self.track_id[i]}", f"{round(mode(acc)*100, 2)}%"]),
+            self.insertRowInTable(self.detectionTable, [f"Plate - {self.track_id[i]}", f"{round(mode(acc)*100, 2)}%"])
+            totalAcc = totalAcc + round(mode(acc)*100, 2)
+        self.insertRowInTable(self.detectionTable, ['Total Accuracy', f"{totalAcc/len(self.plateAccuracy)}%"])
+    
+    def populatePlateTextTable(self):
+        self.insertRowInTable(self.plateTextTable, ['Plate Texts', '------------'])
+        for i, res in enumerate(self.plateTexts):
+            self.insertRowInTable(self.plateTextTable, [f"Plate - {self.track_id[i]}", f"{res}"])
 
     def enableVideoPlayerButtons(self, value):
         self.videoBar.play_btn.setEnabled(value)

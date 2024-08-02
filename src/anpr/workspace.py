@@ -205,16 +205,7 @@ class Workspace(QMainWindow):
         pass
 
     def populatePlateTextTable(self):
-        self.insertRowInTable(self.plateTextTable, ['Plate Texts', '------------'])
-        for i, res in enumerate(self.plateTexts):
-            self.insertRowInTable(self.plateTextTable, [f"Plate - {self.track_id[i]}", f"{res[0]}"])
-        
-        self.insertRowInTable(self.plateTextTable, ['Text Accuracy', '------------'])
-        totalAcc = 0
-        for i, res in enumerate(self.plateTexts):
-            self.insertRowInTable(self.plateTextTable, [f"Plate - {self.track_id[i]}", f"{round(res[1]*100, 2)}%"])
-            totalAcc = totalAcc + round(res[1]*100, 2)
-        self.insertRowInTable(self.plateTextTable, ['Total Accuracy', f"{totalAcc/len(self.plateTexts)}%"])
+        pass
 
     def resetLocalData(self):
         self.plates = []

@@ -113,7 +113,7 @@ class PlateTextScanner(QThread):
             
             self.workspace.plateTexts = []
             for tr_id in self.workspace.track_id:
-                self.workspace.plateTexts.append(('Nil', 0))
+                self.workspace.plateTexts.append('Nil')
 
             i=0
             dict_store={}
@@ -150,9 +150,7 @@ class PlateTextScanner(QThread):
                 for i in range(len(text_list[0])):
                     txt+=self.most_occurring_char_at_index(text_list,i)
                 self.final_text.append(txt)
-                self.workspace.plateTexts[self.workspace.track_id.index(key)] = (txt, 0.85) 
-            print(keys)
-            print(self.final_text)    
+                self.workspace.plateTexts[self.workspace.track_id.index(key)] = txt 
 
             self.loadingSignal.emit(70)
 
@@ -164,16 +162,12 @@ class PlateTextScanner(QThread):
 
             self.workspace.videoCap.set(CAP_PROP_POS_FRAMES, 0)
 
-            texts = []
-            for text, score in self.workspace.plateTexts:
-                texts.append(text)
-
             i=0
             while(self.workspace.videoCap.isOpened()):
                 ret, frame = self.workspace.videoCap.read()
                 if ret:
                     self.loadingSignal.emit(int(70 + (self.workspace.videoCap.get(CAP_PROP_POS_FRAMES)/self.workspace.frameCount)*25))
-                    self.workspace.markPlatesText(frame, self.workspace.plateCoords[i], texts)
+                    self.workspace.markPlatesText(frame, self.workspace.plateCoords[i], self.workspace.plateTexts)
                     out.write(frame)
                 else:
                     break
@@ -217,9 +211,6 @@ class ImagePreProcessor:
     def thresholding(self, image):
         thresh = threshold(image,0,255,THRESH_BINARY_INV|THRESH_OTSU)[1]
         return thresh
- 
- 
- 
  
     def opening(self, image):
         kernel = getStructuringElement(MORPH_ELLIPSE, (2, 2))
