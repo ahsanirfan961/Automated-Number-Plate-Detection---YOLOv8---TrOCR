@@ -142,6 +142,7 @@ class PlateTextScanner(QThread):
             keys=[]     
             for key in dict_store:
                 keys.append(key)
+                keys.append(key)
                 text_list= [t[0] for t in dict_store[key]]
                 text_list=self.filter_words_symbols(text_list)
                 text_list=self.filter_by_common_length(text_list)
