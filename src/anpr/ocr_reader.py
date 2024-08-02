@@ -2,7 +2,7 @@ from PyQt6.QtCore import QThread, pyqtSignal
 from anpr.workspace import *
 from anpr import data
 from anpr.plate_detection import MODE_IMAGE, MODE_VIDEO
-from cv2 import CAP_PROP_POS_FRAMES, VideoWriter, VideoWriter_fourcc, VideoCapture, fastNlMeansDenoisingColored, COLOR_BGR2GRAY, threshold, THRESH_BINARY_INV, THRESH_OTSU, MORPH_ELLIPSE, getStructuringElement, morphologyEx, MORPH_OPEN, imwrite
+from cv2 import CAP_PROP_POS_FRAMES, VideoWriter, VideoWriter_fourcc, VideoCapture, fastNlMeansDenoisingColored, COLOR_BGR2GRAY, threshold, THRESH_BINARY_INV, THRESH_OTSU, MORPH_ELLIPSE, getStructuringElement, morphologyEx, MORPH_OPEN, imwrite, imshow, waitKey
 from os import getenv
 from easyocr import Reader
 from collections import Counter
@@ -14,7 +14,10 @@ class OCRReader:
         
 
     def read(self, image):
-        result = self.reader.readtext(self.preProcessor.preprocess_image(image))
+        img = self.preProcessor.preprocess_image(image)
+        imshow('Plate', img)
+        waitKey(20)
+        result = self.reader.readtext(img)
         for res in result:
             return (res[1], res[2])
 
@@ -36,8 +39,6 @@ class PlateTextScanner(QThread):
            max_length = max(len(word) for word in words)
            longest_words = [word for word in words if len(word) == max_length]
            return longest_words
-       
-        
 
         def most_occurring_char_at_index(self,words, index):
           if not words:
@@ -54,8 +55,7 @@ class PlateTextScanner(QThread):
             most_common_char = None
     
           return most_common_char       
-       
-       
+             
         def detectFromImage(self):
             for plate in self.workspace.plates:
                 plate = cvtColor(plate, COLOR_BGR2RGB)
@@ -121,6 +121,7 @@ class PlateTextScanner(QThread):
                 else:
                     break
                 i=i+1  
+
             for key in dict_store:
                 text_list= [t[0] for t in dict_store[key]]
                 text_list=self.longest_words_and_length(text_list)
@@ -129,10 +130,7 @@ class PlateTextScanner(QThread):
                 for i in range(len(text_list[0])):
                     txt+=self.most_occurring_char_at_index(text_list,i)
                 self.final_text.append(txt)    
-                self.workspace.plateTexts[self.workspace.track_id.index(tr_id)] = (txt, 0.85) 
-                
-                
-                    
+                self.workspace.plateTexts[self.workspace.track_id.index(key)] = (txt, 0.85) 
 
             self.loadingSignal.emit(70)
 
