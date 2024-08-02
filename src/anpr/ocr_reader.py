@@ -5,11 +5,13 @@ from anpr.plate_detection import MODE_IMAGE, MODE_VIDEO
 from cv2 import CAP_PROP_POS_FRAMES, VideoWriter, VideoWriter_fourcc, VideoCapture, fastNlMeansDenoisingColored, COLOR_BGR2GRAY, threshold, THRESH_BINARY_INV, THRESH_OTSU, MORPH_ELLIPSE, getStructuringElement, morphologyEx, MORPH_OPEN, imwrite
 from os import getenv
 from easyocr import Reader
+from collections import Counter
 
 class OCRReader:
     def __init__(self):
         self.reader = Reader(['en'])
         self.preProcessor = ImagePreProcessor()
+        
 
     def read(self, image):
         result = self.reader.readtext(self.preProcessor.preprocess_image(image))
@@ -26,7 +28,34 @@ class PlateTextScanner(QThread):
             super().__init__()
             self.workspace = workspace
             self.mode = mode
+            self.final_text=[]   # this will hold final processed text of number plate
+            
+        def longest_words_and_length(self,words):
+           if not words:
+             return []
+           max_length = max(len(word) for word in words)
+           longest_words = [word for word in words if len(word) == max_length]
+           return longest_words
+       
         
+
+        def most_occurring_char_at_index(self,words, index):
+          if not words:
+            return None
+
+          characters_at_index = [word[index] for word in words]
+          char_counter = Counter(characters_at_index)
+          most_common = char_counter.most_common(1)
+          
+          if most_common:
+            most_common_char = most_common[0][0]
+            
+          else:
+            most_common_char = None
+    
+          return most_common_char       
+       
+       
         def detectFromImage(self):
             for plate in self.workspace.plates:
                 plate = cvtColor(plate, COLOR_BGR2RGB)
@@ -69,6 +98,7 @@ class PlateTextScanner(QThread):
                 self.workspace.plateTexts.append(('Nil', 0))
 
             i=0
+            dict_store={}
             while(self.workspace.videoCap.isOpened()):
                 ret, frame = self.workspace.videoCap.read()
                 if ret:
@@ -82,11 +112,27 @@ class PlateTextScanner(QThread):
                             continue
                         else:
                             text, acc = result
-                        if self.workspace.plateTexts[self.workspace.track_id.index(tr_id)][1] < acc:
-                            self.workspace.plateTexts[self.workspace.track_id.index(tr_id)] = (text, acc)
+                            if tr_id in dict_store:
+                                dict_store[tr_id].append((text,acc))
+                            else:
+                                dict_store[tr_id]=[(text,acc)]    
+                        #if self.workspace.plateTexts[self.workspace.track_id.index(tr_id)][1] < acc:
+                         #   self.workspace.plateTexts[self.workspace.track_id.index(tr_id)] = (text, acc)
                 else:
                     break
-                i=i+1
+                i=i+1  
+            for key in dict_store:
+                text_list= [t[0] for t in dict_store[key]]
+                text_list=self.longest_words_and_length(text_list)
+                print(text_list)
+                txt=''
+                for i in range(len(text_list[0])):
+                    txt+=self.most_occurring_char_at_index(text_list,i)
+                self.final_text.append(txt)    
+                self.workspace.plateTexts[self.workspace.track_id.index(tr_id)] = (txt, 0.85) 
+                
+                
+                    
 
             self.loadingSignal.emit(70)
 
