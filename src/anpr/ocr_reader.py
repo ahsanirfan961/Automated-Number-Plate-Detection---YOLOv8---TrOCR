@@ -153,10 +153,6 @@ class PlateTextScanner(QThread):
                 self.workspace.plateTexts[self.workspace.track_id.index(key)] = (txt, 0.85) 
             print(keys)
             print(self.final_text)    
-            
-                
-                
-                    
 
             self.loadingSignal.emit(70)
 
