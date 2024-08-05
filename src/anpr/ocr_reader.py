@@ -5,20 +5,30 @@ from numpy import sum
 from anpr.plate_detection import MODE_IMAGE, MODE_VIDEO
 from cv2 import CAP_PROP_POS_FRAMES, VideoWriter, VideoWriter_fourcc, VideoCapture, fastNlMeansDenoisingColored, COLOR_BGR2GRAY, threshold, THRESH_BINARY_INV, THRESH_OTSU, MORPH_ELLIPSE, getStructuringElement, morphologyEx, MORPH_OPEN, imwrite,GaussianBlur,adaptiveThreshold,ADAPTIVE_THRESH_GAUSSIAN_C
 from os import getenv
-from easyocr import Reader
 from collections import Counter
 from re import match
+from transformers import TrOCRProcessor, VisionEncoderDecoderModel
 
 class OCRReader:
     def __init__(self):
-        self.reader = Reader(['en'])
+        # self.reader = Reader(['en'])
         self.preProcessor = ImagePreProcessor()
+
+        self.processor = TrOCRProcessor.from_pretrained(data.ocrModelPath, local_files_only=True)
+        self.model = VisionEncoderDecoderModel.from_pretrained(data.ocrModelPath, local_files_only=True)
+        self.model.to("cuda")
         
 
     def read(self, image):
-        result = self.reader.readtext(self.preProcessor.preprocess_image(image))
-        for res in result:
-            return (res[1], res[2])
+        # result = self.reader.readtext(self.preProcessor.preprocess_image(image))
+
+        pixel_values = self.processor(images=[image], return_tensors="pt").pixel_values.to("cuda")
+
+        generated_ids = self.model.generate(pixel_values)
+        result = self.processor.batch_decode(generated_ids, skip_special_tokens=True)
+
+        # for res in result:
+        return result[0]
 
 
 class PlateTextScanner(QThread):
@@ -79,16 +89,12 @@ class PlateTextScanner(QThread):
                 plate = cvtColor(plate, COLOR_BGR2RGB)
                 result = self.workspace.ocrReader.read(plate)
                 if result is None:
-                    self.workspace.plateTexts.append(('Nil', 0))
+                    self.workspace.plateTexts.append('Nil')
                 else:
                     self.workspace.plateTexts.append(result)
             self.loadingSignal.emit(70)
 
-            texts = []
-            for text, score in self.workspace.plateTexts:
-                texts.append(text)
-
-            self.workspace.markPlatesText(self.workspace.canvasImage, self.workspace.plateCoords, texts)
+            self.workspace.markPlatesText(self.workspace.canvasImage, self.workspace.plateCoords, self.workspace.plateTexts)
             self.loadingSignal.emit(85)
         
         def detectFromVideo(self):
@@ -98,59 +104,59 @@ class PlateTextScanner(QThread):
             currentFrame = self.workspace.videoCap.get(CAP_PROP_POS_FRAMES)
 
             # Old Logic
-            # for i, plate in enumerate(self.workspace.plates):
-            #     self.loadingSignal.emit(int(30 + (i/len(self.workspace.plates))*40))
-            #     plate = cvtColor(plate, COLOR_BGR2RGB)
-            #     result = self.workspace.ocrReader.read(plate)
-            #     if result is None:
-            #         self.workspace.plateTexts.append(('Nil', 0))
-            #     else:
-            #         self.workspace.plateTexts.append(result)
+            for i, plate in enumerate(self.workspace.plates):
+                self.loadingSignal.emit(int(30 + (i/len(self.workspace.plates))*40))
+                plate = cvtColor(plate, COLOR_BGR2RGB)
+                result = self.workspace.ocrReader.read(plate)
+                if result is None:
+                    self.workspace.plateTexts.append('Nil')
+                else:
+                    self.workspace.plateTexts.append(result)
 
 
             # New Logic
-            self.workspace.videoCap.set(CAP_PROP_POS_FRAMES, 0)
+            # self.workspace.videoCap.set(CAP_PROP_POS_FRAMES, 0)
             
-            self.workspace.plateTexts = []
-            for tr_id in self.workspace.track_id:
-                self.workspace.plateTexts.append('Nil')
+            # self.workspace.plateTexts = []
+            # for tr_id in self.workspace.track_id:
+            #     self.workspace.plateTexts.append('Nil')
 
-            i=0
-            dict_store={}
-            while(self.workspace.videoCap.isOpened()):
-                ret, frame = self.workspace.videoCap.read()
-                if ret:
-                    self.loadingSignal.emit(int(30 + (self.workspace.videoCap.get(CAP_PROP_POS_FRAMES)/self.workspace.frameCount)*40))
-                    for tr_id in self.workspace.plateCoords[i].keys():
-                        coord = self.workspace.plateCoords[i][tr_id]
-                        plate = frame[coord['y1']:coord['y2'], coord['x1']:coord['x2']]
-                        plate = cvtColor(plate, COLOR_BGR2RGB)
-                        result = self.workspace.ocrReader.read(plate)
-                        if result is None:
-                            continue
-                        else:
-                            text, acc = result
-                            if tr_id in dict_store:
-                                dict_store[tr_id].append((text,acc))
-                            else:
-                                dict_store[tr_id]=[(text,acc)]    
-                        #if self.workspace.plateTexts[self.workspace.track_id.index(tr_id)][1] < acc:
-                         #   self.workspace.plateTexts[self.workspace.track_id.index(tr_id)] = (text, acc)
-                else:
-                    break
-                i=i+1 
-            keys=[]     
-            for key in dict_store:
-                keys.append(key)
-                keys.append(key)
-                text_list= [t[0] for t in dict_store[key]]
-                text_list=self.filter_words_symbols(text_list)
-                text_list=self.filter_by_common_length(text_list)
-                txt=''
-                for i in range(len(text_list[0])):
-                    txt+=self.most_occurring_char_at_index(text_list,i)
-                self.final_text.append(txt)
-                self.workspace.plateTexts[self.workspace.track_id.index(key)] = txt 
+            # i=0
+            # dict_store={}
+            # while(self.workspace.videoCap.isOpened()):
+            #     ret, frame = self.workspace.videoCap.read()
+            #     if ret:
+            #         self.loadingSignal.emit(int(30 + (self.workspace.videoCap.get(CAP_PROP_POS_FRAMES)/self.workspace.frameCount)*40))
+            #         for tr_id in self.workspace.plateCoords[i].keys():
+            #             coord = self.workspace.plateCoords[i][tr_id]
+            #             plate = frame[coord['y1']:coord['y2'], coord['x1']:coord['x2']]
+            #             plate = cvtColor(plate, COLOR_BGR2RGB)
+            #             result = self.workspace.ocrReader.read(plate)
+            #             if result is None:
+            #                 continue
+            #             else:
+            #                 text, acc = result
+            #                 if tr_id in dict_store:
+            #                     dict_store[tr_id].append((text,acc))
+            #                 else:
+            #                     dict_store[tr_id]=[(text,acc)]    
+            #             #if self.workspace.plateTexts[self.workspace.track_id.index(tr_id)][1] < acc:
+            #              #   self.workspace.plateTexts[self.workspace.track_id.index(tr_id)] = (text, acc)
+            #     else:
+            #         break
+            #     i=i+1 
+            # keys=[]     
+            # for key in dict_store:
+            #     keys.append(key)
+            #     keys.append(key)
+            #     text_list= [t[0] for t in dict_store[key]]
+            #     text_list=self.filter_words_symbols(text_list)
+            #     text_list=self.filter_by_common_length(text_list)
+            #     txt=''
+            #     for i in range(len(text_list[0])):
+            #         txt+=self.most_occurring_char_at_index(text_list,i)
+            #     self.final_text.append(txt)
+            #     self.workspace.plateTexts[self.workspace.track_id.index(key)] = txt 
 
             self.loadingSignal.emit(70)
 

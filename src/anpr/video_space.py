@@ -204,10 +204,6 @@ class VideoSpace(Workspace):
             totalAcc = totalAcc + round(mode(acc)*100, 2)
         self.insertRowInTable(self.detectionTable, ['Total Accuracy', f"{totalAcc/len(self.plateAccuracy)}%"])
     
-    def populatePlateTextTable(self):
-        self.insertRowInTable(self.plateTextTable, ['Plate Texts', '------------'])
-        for i, res in enumerate(self.plateTexts):
-            self.insertRowInTable(self.plateTextTable, [f"Plate - {self.track_id[i]}", f"{res}"])
 
     def enableVideoPlayerButtons(self, value):
         self.videoBar.play_btn.setEnabled(value)

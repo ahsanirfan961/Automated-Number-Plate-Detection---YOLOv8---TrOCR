@@ -32,6 +32,7 @@ class Workspace(QMainWindow):
     ocrReader = None
     plateArrivals = []
     plateRetreats = []
+    textSize = 1
 
     def __init__(self):
         super(Workspace, self).__init__()
@@ -155,13 +156,13 @@ class Workspace(QMainWindow):
             x1, y1, x2, y2 = position['x1'], position['y1'], position['x2'], position['y2']
             rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
             rectangle(frame, (int(x1), int(y2)), (int(x2), int(y2+20)), (0, 255, 0), -1)
-            putText(frame, f"P {track_id[i]}", (int(x1+5), int(y2 + 15)),FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1, LINE_AA)
+            putText(frame, f"P {track_id[i]}", (int(x1+5), int(y2 + 15)),FONT_HERSHEY_SIMPLEX, self.textSize, (0,0,0), 1, LINE_AA)
 
     def markPlatesText(self, frame, plateCoords, plateTexts):
         for i, position in enumerate(plateCoords):
             x1, y1, x2, y2 = position['x1'], position['y1'], position['x2'], position['y2']    
             rectangle(frame, (int(x1), int(y1-20)), (int(x2), int(y1)), (0, 255, 0), -1)
-            putText(frame, plateTexts[i], (int(x1+5), int(y1 - 5)),FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1, LINE_AA)
+            putText(frame, plateTexts[i], (int(x1+5), int(y1 - 5)),FONT_HERSHEY_SIMPLEX, self.textSize, (0,0,0), 1, LINE_AA)
     
     def updateCanvasSize(self):
         self.canvasWidth = self.canvas.width()
@@ -197,6 +198,8 @@ class Workspace(QMainWindow):
                 self.updateUi()
                 self.resetLocalData()
                 self.scan_text_btn.setEnabled(False)
+                self.getFontSize()
+                print(self.textSize)
                 self.showStatusBarMessage(f"Successfully Loaded {self.filename}!")
         else:
             self.showStatusBarMessage(f"Cancelled!")
@@ -205,7 +208,9 @@ class Workspace(QMainWindow):
         pass
 
     def populatePlateTextTable(self):
-        pass
+        self.insertRowInTable(self.plateTextTable, ['Plate Texts', '------------'])
+        for i, res in enumerate(self.plateTexts):
+            self.insertRowInTable(self.plateTextTable, [f"Plate - {self.track_id[i]}", f"{res}"])
 
     def resetLocalData(self):
         self.plates = []
@@ -215,6 +220,15 @@ class Workspace(QMainWindow):
         self.track_id = []
         self.plateArrivals = []
         self.plateRetreats =[]
+    
+    def getFontSize(self):
+        self.textSize = (1.11022e-16 
+            - 0.000108018 * self.canvasImage.shape[0] 
+            + 8.39985e-6 * self.canvasImage.shape[0]**2 
+            - 2.70161e-8 * self.canvasImage.shape[0]**3 
+            + 3.66436e-11 * self.canvasImage.shape[0]**4 
+            - 2.25835e-14 * self.canvasImage.shape[0]**5 
+            + 5.23394e-18 * self.canvasImage.shape[0]**6)
 
     def loadFileFromPath(self, path):
         pass
