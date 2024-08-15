@@ -3,7 +3,7 @@ from PyQt6.QtCore import QTimer
 
 class ProgressBar(QProgressBar):
 
-    def __init__(self, parent: QWidget):
+    def __init__(self, parent: QWidget, shouldHide=True):
         super().__init__(parent)
         self.setMaximum(100)
         self.setStyleSheet("""
@@ -12,12 +12,13 @@ class ProgressBar(QProgressBar):
                            font-size: 10px;
                            text-align: center
                            """)
+        self.shouldHide = shouldHide
         self.hide()
     
     def update(self, value):
         self.show()
         if(self.value() >= value or self.value() == 100):
-            if(self.value() == 100):
+            if(self.value() == 100 and self.shouldHide):
                 QTimer.singleShot(5000, self.hide)
             return
         self.setValue(self.value()+1)

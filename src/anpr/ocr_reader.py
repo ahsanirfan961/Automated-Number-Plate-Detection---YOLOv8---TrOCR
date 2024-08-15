@@ -14,11 +14,11 @@ class OCRReader:
         # self.reader = Reader(['en'])
         self.preProcessor = ImagePreProcessor()
 
-        self.processor = TrOCRProcessor.from_pretrained(data.ocrModelPath, local_files_only=True)
-        self.model = VisionEncoderDecoderModel.from_pretrained(data.ocrModelPath, local_files_only=True)
+        self.processor = TrOCRProcessor.from_pretrained(data.OCR_MODEL_PATH, local_files_only=True)
+        self.model = VisionEncoderDecoderModel.from_pretrained(data.OCR_MODEL_PATH, local_files_only=True)
         self.model.to("cuda")
         
-
+ 
     def read(self, image):
         # result = self.reader.readtext(self.preProcessor.preprocess_image(image))
 

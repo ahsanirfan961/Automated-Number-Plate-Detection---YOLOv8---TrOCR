@@ -2,8 +2,8 @@ from sys import exit
 from anpr.home import Home
 from anpr import data
 
-import multiprocessing
-multiprocessing.freeze_support()
+# import multiprocessing
+# multiprocessing.freeze_support()
 
 home = Home()
 data.stackedWidget.setWindowTitle('Automated Number Plate Recognizer')

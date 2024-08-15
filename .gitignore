@@ -7,4 +7,4 @@ tests
 assets/images/*.mp4
 src/anpr/__pycache__
 .venv
-assets/models/ocr_model/model.safetensors
+model.safetensors

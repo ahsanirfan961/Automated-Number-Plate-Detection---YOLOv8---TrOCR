@@ -56,7 +56,7 @@ class Workspace(QMainWindow):
         self.new_btn.clicked.connect(self.new)
         self.scan_btn.clicked.connect(self.scan)
         self.scan_text_btn.clicked.connect(self.scanText)
-        self.reset_btn.clicked.connect(self.resetCanvas)
+        self.reset_btn.clicked.connect(self.resetCanvas) 
 
         # Loading
         self.loading = ProgressBar(self.statusbar)

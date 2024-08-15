@@ -9,7 +9,7 @@ class ImageSpace(Workspace):
  
     def __init__(self):
         super().__init__()
-
+ 
         self.initCanvasImage = QPixmap('assets/images/image icon small.png')
         self.newFileTypes = 'PNG JPEG (*.jpg *.png)'
         self.saveFileTypes = 'PNG (*.png);;JPEG (*.jpg)'
@@ -47,20 +47,23 @@ class ImageSpace(Workspace):
                 self.showStatusBarMessage('No Video loaded!')
             
     def scanText(self):
-        if self.imageLoaded and len(self.plateTexts) == 0:
-            self.plateTextTable.clearContents()
-            self.plateTextTable.setRowCount(0)
-            self.scanThread = PlateTextScanner(self, MODE_IMAGE)
-            self.scanThread.statusBarSignal.connect(self.showStatusBarMessage)
-            self.scanThread.updateUiSignal.connect(self.updateUi)
-            self.scanThread.loadingSignal.connect(self.loading.update)
-            self.loading.reset()
-            self.scanThread.start()
-        else:
-            if len(self.plateTexts) > 0:
-                self.showStatusBarMessage('Already scanned for number plates text!')
+        if data.ocrModelExists():
+            if self.imageLoaded and len(self.plateTexts) == 0:
+                self.plateTextTable.clearContents()
+                self.plateTextTable.setRowCount(0)
+                self.scanThread = PlateTextScanner(self, MODE_IMAGE)
+                self.scanThread.statusBarSignal.connect(self.showStatusBarMessage)
+                self.scanThread.updateUiSignal.connect(self.updateUi)
+                self.scanThread.loadingSignal.connect(self.loading.update)
+                self.loading.reset()
+                self.scanThread.start()
             else:
-                self.showStatusBarMessage('No image loaded!')
+                if len(self.plateTexts) > 0:
+                    self.showStatusBarMessage('Already scanned for number plates text!')
+                else:
+                    self.showStatusBarMessage('No image loaded!')
+        else:
+            self.showStatusBarMessage('OCR Model not found! Please download the OCR model from the settings menu!')
  
     def populateDetectionTable(self):
         self.insertRowInTable(self.detectionTable, ['# of plates', f"{len(self.plateCoords)}"])

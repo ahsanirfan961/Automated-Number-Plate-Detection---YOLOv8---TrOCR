@@ -1,5 +1,5 @@
 from ultralytics import YOLO
-from anpr.data import modelPath
+from anpr.data import DETECTION_MODEL_PATH
 from PyQt6.QtCore import QThread, pyqtSignal
 from anpr.workspace import Workspace
 from cv2 import CAP_PROP_POS_FRAMES, VideoWriter, VideoWriter_fourcc, VideoCapture
@@ -12,7 +12,7 @@ MODE_VIDEO = 1
 class YoloPlateDetector:
 
     def __init__(self) -> None:
-        self.model = YOLO(modelPath)
+        self.model = YOLO(data.DETECTION_MODEL_PATH)
 
     def detect(self, image):
         images=[]
