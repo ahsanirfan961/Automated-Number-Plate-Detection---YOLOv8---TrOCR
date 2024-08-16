@@ -1,9 +1,14 @@
 from PyQt6.QtWidgets import QStackedWidget, QApplication
+from PyQt6.QtGui import QIcon
 from sys import argv
 import os, shutil
 
+import cv2
+
 app = QApplication(argv)
 stackedWidget = QStackedWidget()
+
+app.setWindowIcon(QIcon('assets/images/scan icon.png'))
 
 codecs = {
     'mp4': 'mp4v',
@@ -54,3 +59,11 @@ def getOcrModelCachePath():
 
 def ocrModelExists():
     return 'model.safetensors' in os.listdir(OCR_MODEL_PATH)
+
+def put_outlined_text(img, text, position, font_scale, thickness, text_color=(0, 0, 0), outline_color=(255, 255, 255)):
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    # Draw the outline
+    cv2.putText(img, text, position, font, font_scale, outline_color, thickness + 3, lineType=cv2.LINE_AA)
+
+    # Draw the inner text
+    cv2.putText(img, text, position, font, font_scale, text_color, thickness, lineType=cv2.LINE_AA)

@@ -7,4 +7,7 @@ tests
 assets/images/*.mp4
 src/anpr/__pycache__
 .venv
+build-env
+dist
+build
 model.safetensors

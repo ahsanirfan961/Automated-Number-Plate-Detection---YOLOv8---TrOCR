@@ -128,9 +128,6 @@ class PlateScanner(QThread):
             self.loadingSignal.emit(20)
             self.workspace.scan_btn.setDisabled(True)
 
-            # if __name__ == '__main__':
-            self.workspace.plateDetector = YoloPlateDetector()
-
             if self.mode == MODE_IMAGE:
                 self.detectFromImage()
             elif self.mode == MODE_VIDEO:

@@ -16,13 +16,13 @@ class OCRReader:
 
         self.processor = TrOCRProcessor.from_pretrained(data.OCR_MODEL_PATH, local_files_only=True)
         self.model = VisionEncoderDecoderModel.from_pretrained(data.OCR_MODEL_PATH, local_files_only=True)
-        self.model.to("cuda")
+        # self.model.to("cuda")
         
  
     def read(self, image):
         # result = self.reader.readtext(self.preProcessor.preprocess_image(image))
 
-        pixel_values = self.processor(images=[image], return_tensors="pt").pixel_values.to("cuda")
+        pixel_values = self.processor(images=[image], return_tensors="pt").pixel_values#.to("cuda")
 
         generated_ids = self.model.generate(pixel_values)
         result = self.processor.batch_decode(generated_ids, skip_special_tokens=True)

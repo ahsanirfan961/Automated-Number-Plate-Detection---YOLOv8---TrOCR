@@ -150,6 +150,7 @@ class VideoSpace(Workspace):
             self.scanThread.updateUiSignal.connect(self.updateUi)
             self.scanThread.loadingSignal.connect(self.loading.update)
             self.loading.reset()
+            self.plateDetector = YoloPlateDetector()
             self.scanThread.start()
         else:
             if len(self.plates) > 0:
@@ -191,8 +192,9 @@ class VideoSpace(Workspace):
             position = plateCoords[tr_id]
             index = self.track_id.index(tr_id)
             x1, y1, x2, y2 = position['x1'], position['y1'], position['x2'], position['y2']
-            rectangle(frame, (int(x1), int(y1-20)), (int(x2), int(y1)), (0, 255, 0), -1)
-            putText(frame, plateTexts[index], (int(x1+5), int(y1 - 5)),FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1, LINE_AA)
+            # rectangle(frame, (int(x1), int(y1-20)), (int(x2), int(y1)), (0, 255, 0), -1)
+            # putText(frame, plateTexts[index], (int(x1+5), int(y1 - 5)),FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1, LINE_AA)
+            data.put_outlined_text(frame, plateTexts[index], (int(x1+5), int(y1 - 5)), self.textSize, 1)
 
     def populateDetectionTable(self):
         self.insertRowInTable(self.detectionTable, ['# of plates', f"{len(self.track_id)}"])

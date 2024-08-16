@@ -161,8 +161,9 @@ class Workspace(QMainWindow):
     def markPlatesText(self, frame, plateCoords, plateTexts):
         for i, position in enumerate(plateCoords):
             x1, y1, x2, y2 = position['x1'], position['y1'], position['x2'], position['y2']    
-            rectangle(frame, (int(x1), int(y1-20)), (int(x2), int(y1)), (0, 255, 0), -1)
-            putText(frame, plateTexts[i], (int(x1+5), int(y1 - 5)),FONT_HERSHEY_SIMPLEX, self.textSize, (0,0,0), 1, LINE_AA)
+            # rectangle(frame, (int(x1), int(y1-20)), (int(x2), int(y1)), (0, 255, 0), -1)
+            # putText(frame, plateTexts[i], (int(x1+5), int(y1 - 5)),FONT_HERSHEY_SIMPLEX, self.textSize, (0,0,0), 1, LINE_AA)
+            data.put_outlined_text(frame, plateTexts[i], (int(x1+5), int(y1 - 5)), self.textSize, 1)
     
     def updateCanvasSize(self):
         self.canvasWidth = self.canvas.width()
@@ -192,13 +193,13 @@ class Workspace(QMainWindow):
             self.resetTables()
             self.filename = path.basename(filePath)
             if self.loadFileFromPath(filePath):
+                self.getFontSize()
                 self.savePath = None
                 self.imageLoaded = True
                 self.canvasImage = cvtColor(self.canvasImage, COLOR_BGR2RGB)
                 self.updateUi()
                 self.resetLocalData()
                 self.scan_text_btn.setEnabled(False)
-                self.getFontSize()
                 print(self.textSize)
                 self.showStatusBarMessage(f"Successfully Loaded {self.filename}!")
         else:
@@ -222,13 +223,16 @@ class Workspace(QMainWindow):
         self.plateRetreats =[]
     
     def getFontSize(self):
-        self.textSize = (1.11022e-16 
-            - 0.000108018 * self.canvasImage.shape[0] 
-            + 8.39985e-6 * self.canvasImage.shape[0]**2 
-            - 2.70161e-8 * self.canvasImage.shape[0]**3 
-            + 3.66436e-11 * self.canvasImage.shape[0]**4 
-            - 2.25835e-14 * self.canvasImage.shape[0]**5 
-            + 5.23394e-18 * self.canvasImage.shape[0]**6)
+        height = self.canvasImage.shape[0]
+        print(height)
+        if height > 1000:
+            self.textSize = 0.8
+        elif height > 800:
+            self.textSize = 0.7
+        elif height > 600:
+            self.textSize = 0.5
+        else:
+            self.textSize = 0.4
 
     def loadFileFromPath(self, path):
         pass
