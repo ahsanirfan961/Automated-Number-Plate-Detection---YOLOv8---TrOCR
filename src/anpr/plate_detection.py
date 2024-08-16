@@ -84,7 +84,7 @@ class PlateScanner(QThread):
             out = VideoWriter(getenv('TEMP')+'detect.'+ext, fourcc, self.workspace.fps, (self.workspace.videoWidth, self.workspace.videoHeight))
             self.loadingSignal.emit(30)
 
-            currentFrame = self.workspace.videoCap.get(CAP_PROP_POS_FRAMES)
+            currentFrame = self.workspace.videoCap.get(CAP_PROP_POS_FRAMES) 
             self.workspace.videoCap.set(CAP_PROP_POS_FRAMES, 0)
 
             self.loadingSignal.emit(40)
@@ -127,6 +127,9 @@ class PlateScanner(QThread):
         def run(self):
             self.loadingSignal.emit(20)
             self.workspace.scan_btn.setDisabled(True)
+
+            # if __name__ == '__main__':
+            self.workspace.plateDetector = YoloPlateDetector()
 
             if self.mode == MODE_IMAGE:
                 self.detectFromImage()

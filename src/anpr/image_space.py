@@ -13,7 +13,6 @@ class ImageSpace(Workspace):
         self.initCanvasImage = QPixmap('assets/images/image icon small.png')
         self.newFileTypes = 'PNG JPEG (*.jpg *.png)'
         self.saveFileTypes = 'PNG (*.png);;JPEG (*.jpg)'
-        self.plateDetector = YoloPlateDetector()
         self.resetCanvas()
 
     def loadFileFromPath(self, path):

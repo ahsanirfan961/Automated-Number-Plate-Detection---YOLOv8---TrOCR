@@ -46,7 +46,6 @@ class VideoSpace(Workspace):
         self.videoPlayer = self.VideoPlayer(self)
         self.videoWriter = self.VideoWriter(self)
         self.videoWriter.loadingSignal.connect(self.loading.update)
-        self.plateDetector = YoloPlateDetector()
 
     def loadFileFromPath(self, path):
         self.videoCap.release()
