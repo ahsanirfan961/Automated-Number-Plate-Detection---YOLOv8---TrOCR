@@ -11,3 +11,4 @@ build-env
 dist
 build
 model.safetensors
+app-setup.exe
