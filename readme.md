@@ -1,6 +1,6 @@
 # Automated Number Plate Detection System
 
-This project is a comprehensive tool for number plate detection and optical character recognition (OCR) using a combination of advanced machine learning models and a user-friendly interface. The tool is built using PyQt6 and Python 3.10 and leverages the YOLOv8n model, TR-OCR (Microsoft Open-source model), OpenCV, and Numpy.
+This project is a comprehensive tool for number plate detection and optical character recognition (OCR) using a combination of advanced machine learning models and a user-friendly interface. The tool is built using PyQt6 and Python 3.10 and leverages the YOLOv8n model, TR-OCR (Microsoft Open-source model), OpenCV, and Numpy. It can detect and read number plates from images and videos. 
 
 
 ## Table of Contents
